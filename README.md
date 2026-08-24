@@ -8,24 +8,82 @@ separately.
 
 ## amoled-1.8-v2 — Waveshare ESP32-S3-Touch-AMOLED-1.8 V2
 
-CO5300 368×448 QSPI AMOLED, CST820 touch, QMI8658 IMU, AXP2101 PMIC, ES8311 audio, 16 MB
-flash / 8 MB octal PSRAM. Runs one platform image —
-[ESP-Brookesia](https://github.com/espressif/esp-brookesia) v0.8 (launcher, status bar, App
-Store, JS runtime) on a V2 HAL board upstream doesn't have — flashed once. Apps are runtime
-packages (`manifest.json` + JS + JSON-UI) dropped onto LittleFS, and the MicroFi agent runs
-inside the image as a native component: it adopts Brookesia's WiFi, heartbeats to EFM, and
-takes flows over C2 while the launcher keeps running. The board's senses are EFM processors —
-`GetIMU` publishes the accelerometer, `DisplayMessage` puts a flow-sent string on the glass.
+CO5300 368×448 QSPI AMOLED, CST820 touch, TCA9554 IO expander, AXP2101 PMIC,
+QMI8658 IMU, ES8311 audio, 16 MB flash / 8 MB octal PSRAM.
 
-Layout, bring-up order, the UI kit and panel simulator, and the hard-won facts are in
-[`amoled-1.8-v2/README.md`](amoled-1.8-v2/README.md).
+The device runs one platform image — [ESP-Brookesia](https://github.com/espressif/esp-brookesia)
+v0.8 (super system: launcher, status bar, App Store, JS runtime) — flashed once.
+Everything else arrives without reflashing:
 
-**Apps** — five runtime packages, each its own repo:
-[`amoled-agent`](https://github.com/TunaStreetTest/amoled-agent) (EFM agent monitor) ·
-[`amoled-racing`](https://github.com/TunaStreetTest/amoled-racing) (Cloudera Racing leaderboard + mini game) ·
-[`amoled-tminus`](https://github.com/TunaStreetTest/amoled-tminus) (next-launch countdown) ·
-[`amoled-xviewer`](https://github.com/TunaStreetTest/amoled-xviewer) (X feed, swipe and like) ·
-[`amoled-hello`](https://github.com/TunaStreetTest/amoled-hello) (the template).
+- **Apps are files.** Runtime app packages (`manifest.json` + JS entry +
+  JSON-UI resources) dropped into `apps/` on LittleFS or SD install at boot —
+  a new tile appears on the launcher. `apps/tunastreet.hello/` here is, as far
+  as we know, the first runtime package built for Brookesia v0.8 outside
+  Espressif — upstream ships the runtime but no example package.
+- **The device is a fleet citizen.** A [MicroFi](https://github.com/) EFM/MiNiFi
+  C2 agent runs inside the platform image as a native background component:
+  it adopts Brookesia's WiFi, heartbeats to Cloudera Edge Flow Manager, and
+  receives flow definitions over C2 — while the launcher keeps running. The
+  board's senses are its processors: `GetIMU` (QMI8658, with a motion
+  threshold so a bump is an event) and `DisplayMessage` (a flow-sent string
+  onto the glass).
+
+### Layout
+
+| Path | What |
+|---|---|
+| `platform/overlay/` | Our delta over the pinned esp-brookesia master: the **V2 HAL board** (`esp32_s3_touch_amoled_1_8_v2` — upstream only has the V1 SH8601/FT3168 board), the `microfi_agent` guest component, super-example wiring (WiFi pre-provision + agent task + status tile), the LVGL gesture-routing fix, and the Tuna Street boot screen resources |
+| `platform/setup.sh` | Clone upstream at `PINNED_UPSTREAM`, apply overlay, select board, stage the `tunastreet.*` app packages, build |
+| `platform/sdkconfig.microfi` | Agent + platform config (WiFi creds live in gitignored `sdkconfig.local`) |
+| `bringup/amoled-colorbar/` | Minimal display bring-up: `esp_lcd_co5300` + `draw_bitmap` only. **Flash this first on a new board** — solid color on the glass before any LVGL/launcher work |
+| `apps/tunastreet.*/` | The runtime app packages — developed here, published as their own repos (below) |
+| `uikit/` | **panelkit** — generates every app screen from `tokens.json` so an illegal size, layout or tap contract fails at generation time, not on the glass; `lint.py` is the pre-flash gate |
+| `tools/simulator/` | Runs an app's real `app.js` + screen off-device at true 368×448 — headless for scoring, in a browser for watching; `lint.js --check` before every flash |
+| `tools/` | Windows-side flash + serial: `bootlog.py` (reset + capture), `readlog.py` (attach without reset), `stage_apps.py`, `lint_shell.py` (the kit's rules over the shell resources) |
+| `boot-screen/compose.py` | Generates the 368×448 boot splash (pixel tuna on black) |
+
+### Hard-won facts
+
+- The CO5300 is **QSPI** — the RGB/vsync LVGL path gives a permanently black
+  panel. Prove the display with `bringup/amoled-colorbar` before anything else.
+- Panel init order: AXP2101 rails → TCA9554 reset pulse → panel. QSPI pins
+  CS=12, PCLK=11, D0–3=4/5/6/7, X-offset 16. Touch is CST820 via the
+  `esp_lcd_touch_cst816s` driver at 0x15, INT=13, RST=39.
+- Brookesia master needs **ESP-IDF 6.0–6.2** on the S3 (IDF 6 no longer
+  bundles cmake/ninja — `pip install cmake ninja` into the IDF venv works).
+- A guest component's static BSS competes with the display's internal-DMA
+  buffers — `microfi_agent`'s 79.6 KB BSS goes to PSRAM via a linker fragment
+  (`extram_bss`), leaving 262 B internal.
+- The example's `littlefs/` tree is a **staged output**: boot-screen edits go
+  in `system/brookesia_system_super/resource/startup/` or the build silently
+  reverts them. A full-size 368×448 splash needs `CONFIG_LV_CACHE_DEF_SIZE`
+  ≥ ~660 KB or it silently doesn't render.
+- Programmatic WiFi provisioning: `SetConnectAp` alone stores the target;
+  `GeneralAction::Connect` is what joins (`Start` is ignored once the service
+  is already Started).
+- LVGL sets `GESTURE_BUBBLE` on every parented object, so a `gesture` declared
+  in a screen.json never fires until the overlay's `event.cpp` clears the flag.
+  Swipe is the only reliable navigation; a tap zone on a swipe surface fires on
+  press *and* release and eats the drag.
+- Fonts are compiled-in Montserrat faces, ASCII only, and an off-ladder
+  `fontSize` rounds **down** with no warning (11sp drew at 8px).
+- The launcher grid comes from `constants/portrait.json` (3 columns, 108dp
+  tile, 16dp gap): nine tiles fit without scrolling. Launcher order is install
+  order — natives first — and no manifest field changes it.
+
+Built on the desk at Tuna Street. The V2 HAL board is a candidate for an
+upstream esp-brookesia PR.
+
+### Apps
+
+Five ESP-Brookesia v0.8 runtime app packages, each published as its own repo
+with its own release history:
+
+- [`amoled-agent`](https://github.com/TunaStreetTest/amoled-agent) — MicroFi EFM agent monitor: live heartbeat, processor count, and the metrics the board ships to Cloudera Edge Flow Manager.
+- [`amoled-racing`](https://github.com/TunaStreetTest/amoled-racing) — live Cloudera Racing leaderboard plus a three-screen mini racing game, sprites rasterised from the upstream game's own SVGs.
+- [`amoled-tminus`](https://github.com/TunaStreetTest/amoled-tminus) — a true-black launch clock counting down to the next real rocket launch (Launch Library 2).
+- [`amoled-xviewer`](https://github.com/TunaStreetTest/amoled-xviewer) — swipe an X feed one card at a time, tap to like.
+- [`amoled-hello`](https://github.com/TunaStreetTest/amoled-hello) — the minimal runtime app template: one label on a black screen, the starting point for a new app.
 
 ## xiao-esp32s3-sense — Seeed XIAO ESP32-S3 Sense
 
