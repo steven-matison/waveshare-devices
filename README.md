@@ -56,3 +56,12 @@ Everything else arrives without reflashing:
 
 Built on the desk at Tuna Street. The V2 HAL board is a candidate for an
 upstream esp-brookesia PR.
+
+## xiao-esp32s3-sense — Seeed XIAO ESP32-S3 Sense
+
+Three Seeed XIAO ESP32-S3 Sense units (8 MB flash + octal PSRAM), each running
+[MicroFi](https://github.com/) — a clean-room microcontroller MiNiFi C2 agent (repo published
+separately) — under Cloudera Edge Flow Manager: MicroFi-1 emits JSON telemetry, MicroFi-2 streams
+camera JPEGs over MQTT into a Kafka bridge, MicroFi-3 emits Sparkplug B. See
+[`xiao-esp32s3-sense/README.md`](xiao-esp32s3-sense/README.md) for hardware facts, flash/serial
+mechanics, EFM class mechanics, and the flow exports.
