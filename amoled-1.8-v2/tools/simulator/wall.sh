@@ -54,7 +54,7 @@ ROW="${WALL_Y1:-588}"          # top edge of the second row
 
 # name | sim port | backend to proxy | debug port | window x:y:w:h | extra query
 WALL=(
-  "racing|8097|127.0.0.1:8093|9341|$X0:$Y0:$WIN_W:$WIN_H_TOP|&fixture=1&drive=examples/racing-bot.js&claude=1"
+  "racing|8097|127.0.0.1:8093|9341|$X0:$Y0:$WIN_W:$WIN_H_TOP|&fixture=1&drive=examples/racing-bot.js&autopilot=1"
   "xviewer|8095|127.0.0.1:8091|9342|$COL:$Y0:$WIN_W:$WIN_H_TOP|"
   "agent|8098|127.0.0.1:8094|9343|$X0:$ROW:$WIN_W:$WIN_H_BOT|"
   "tminus|8096|127.0.0.1:8092|9344|$COL:$ROW:$WIN_W:$WIN_H_BOT|"

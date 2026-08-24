@@ -43,7 +43,7 @@
   #bar { display:flex; gap:8px; justify-content:center; align-items:center; font-size:11px;
          flex-wrap:nowrap; white-space:nowrap; }
   #bar button { padding:5px 11px; font-size:11px; border-radius:7px; border:1px solid #555;
-                background:#F96702; color:#111; font-weight:700; cursor:pointer; }
+                background:#e5484d; color:#111; font-weight:700; cursor:pointer; }
   #bar button:disabled { background:#333; color:#777; cursor:default; }
   /* Sim-only prev/next, shown only for an app whose screen root declares a
      `gesture` event (xviewer, tminus) -- never drawn inside the panel and
@@ -68,8 +68,7 @@
   <button id="navNext" title="next (swipe left)">&gt;</button>
 </div>
 <div id="bar">
-  <button id="auto" disabled>CLAUDE DRIVES — start</button>
-  <span id="autostate" style="color:#888"></span>
+  <button id="auto" disabled data-on="0">AUTO PILOT</button>
   <span id="apptag" style="color:#555"></span>
 </div>
 <div id="log"></div>
@@ -86,7 +85,7 @@ const USE_FIXTURE = params.get("fixture") === "1";
 // the module has finished loading).
 if (params.get("chrome") === "1") { document.body.classList.add("chrome"); }
 if (DRIVE) { document.body.classList.add("driver"); }
-const AUTO_CLAUDE = params.get("claude") === "1";
+const AUTO_ENGAGE = params.get("autopilot") === "1";
 
 // ---- panel scale ---------------------------------------------------------
 // PANEL_W/H are the glass, never changed. SCALE is a pure presentation
@@ -489,18 +488,15 @@ DomRenderer.prototype.render = function () {
   // ---- autopilot: driver.step() running where you can watch it ------------
   let auto = false;
   const autoBtn = document.getElementById("auto");
-  const autoState = document.getElementById("autostate");
   function setAuto(on) {
     if (!driver) { return; }
     auto = on;
-    autoBtn.textContent = on ? "CLAUDE DRIVING — stop" : "CLAUDE DRIVES — start";
-    autoBtn.style.background = on ? "#22c55e" : "#F96702";
-    autoState.textContent = on ? "autopilot engaged" : "C toggles";
+    autoBtn.style.background = on ? "#22c55e" : "#e5484d";   // green = engaged, red = not
+    autoBtn.dataset.on = on ? "1" : "0";
     if (on && driver.boot) { driver.boot(); }
   }
   if (driver) {
     autoBtn.disabled = false;
-    autoState.textContent = "C toggles";
     applyScale();   // the bar's row is real now; re-fit around it
   }
   autoBtn.addEventListener("click", () => setAuto(!auto));
@@ -513,7 +509,7 @@ DomRenderer.prototype.render = function () {
     else if (driver.restart && ++overSeen > 90) { driver.restart(); overSeen = 0; }
   };
 
-  if (AUTO_CLAUDE && driver) { setAuto(true); }
+  if (AUTO_ENGAGE && driver) { setAuto(true); }
   window.sim = shim; window.driver = driver; // console access
 })();
 </script>

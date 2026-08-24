@@ -3,12 +3,22 @@
  *
  * The Cloudera Racing game itself, playable on the 368x448 AMOLED: pick a car,
  * dodge villains across three lanes. The driver is this device (DRIVER below) -
- * no name entry, the panel knows who it is. Same rules as the
- * browser game (3 Datahero lives, speed level every 15s, Hero Mode at 2:00,
- * iceberg power-up past 3000) and the same telemetry - every heartbeat,
- * collision and game_over is POSTed through the LAN backend into the real
- * pipeline (nginx -> NiFi ListenHTTP -> Kafka), so a run played on the panel
- * lands on the same leaderboard as a run played in the browser.
+ * no name entry, the panel knows who it is. Rules follow the browser game
+ * (3 Datahero lives, speed level every 15s, Hero Mode at 2:00, iceberg
+ * power-up past 3000) with three deliberate differences, all so the speed
+ * only ever climbs and every run ends:
+ *   - the iceberg is a pure +200 pickup: it never lowers the speed level and
+ *     never restarts the 15s ramp clock;
+ *   - collisions are swept over the whole step, so nothing tunnels through
+ *     the car at high speed;
+ *   - past BLIND_LEVEL (obstacles cross the road faster than the screen can
+ *     show them) a growing share of villains spawn partway down the road,
+ *     some with no warning at all - the "random difficulty" that ends an
+ *     autopilot's run.
+ * Same telemetry - every heartbeat, collision and game_over is POSTed through
+ * the LAN backend into the real pipeline (nginx -> NiFi ListenHTTP -> Kafka),
+ * so a run played on the panel lands on the same leaderboard as a run played
+ * in the browser.
  *
  * Sandbox rules (same as tunastreet.tminus/xviewer): plain global script
  * (QuickJS, JS_EVAL_TYPE_GLOBAL), no fetch/XHR/setTimeout; HTTP via the "Http"
@@ -38,6 +48,14 @@
     var BOOST_SEC = 15;
     var HERO_SEC = 120;
     var ICEBERG_MIN = 3000;
+    // Blind spawns. At BLIND_LEVEL an obstacle crosses road-top to car in
+    // ~5 ticks (200ms) - too fast to see, let alone react to. From there a
+    // share of villains (climbing to BLIND_MAX over BLIND_RAMP levels) spawn
+    // at a random depth down the road instead of at the top; one that lands
+    // in the hit band in your lane is a hit nobody could have dodged.
+    var BLIND_LEVEL = 30;
+    var BLIND_RAMP = 10;
+    var BLIND_MAX = 0.5;
 
     var ORANGE = "#F96702";
     var GREEN = "#22c55e";
@@ -406,6 +424,11 @@
         bind("/panel_game/g_obs" + i, "obs" + i + "H", "true");
     }
 
+    function blindShare() {
+        if (speedLevel < BLIND_LEVEL) { return 0; }
+        return Math.min(BLIND_MAX, BLIND_MAX * (speedLevel - BLIND_LEVEL + 1) / BLIND_RAMP);
+    }
+
     function spawnObs() {
         for (var i = 0; i < OBS; i++) {
             if (obs[i].alive) { continue; }
@@ -426,6 +449,12 @@
             // so anything spawned above ROAD_TOP paints straight over the
             // score, lives and clock on its way down.
             obs[i].y = ROAD_TOP;
+            if (type !== "iceberg" && Math.random() < blindShare()) {
+                // Anywhere from the road's top edge down to the bottom of the
+                // hit band. tick() spawns before it moves, so one that lands
+                // in the band in the car's lane hits this same tick.
+                obs[i].y = ROAD_TOP + Math.random() * (CAR_Y + 52 - ROAD_TOP);
+            }
             obs[i].type = type;
             bind("/panel_game/g_obs" + i, "obs" + i + "X", LANES[l] - OBS_SZ / 2);
             bind("/panel_game/g_obs" + i, "obs" + i + "Y", Math.round(obs[i].y));
@@ -436,11 +465,8 @@
     }
 
     function hitIceberg() {
-        if (speedLevel > 1) {
-            speedLevel--;
-            baseKmh = Math.max(60, baseKmh - 20);
-        }
-        boostCd = BOOST_SEC;
+        // Points only. The browser game also drops a speed level and restarts
+        // the ramp clock here; both are gone so the speed can only climb.
         score += 200;
         toast("ICEBERG! +200");
         sendTelemetry("powerup_iceberg");
@@ -467,16 +493,19 @@
         for (var i = 0; i < OBS; i++) {
             var o = obs[i];
             if (!o.alive) { continue; }
+            var prev = o.y;
             o.y += step;
-            if (o.y > ROAD_BOTTOM) {
-                hideObs(i);
-                score += 10;
-                continue;
-            }
-            if (o.lane === lane && o.y > CAR_Y - OBS_SZ && o.y < CAR_Y + 52) {
+            // Swept over [prev, o.y]: at high speed a step is wider than the
+            // hit band, and a point test would let obstacles tunnel through.
+            if (o.lane === lane && o.y > CAR_Y - OBS_SZ && prev < CAR_Y + 52) {
                 hideObs(i);
                 if (o.type === "iceberg") { hitIceberg(); } else { hitVillain(); }
                 if (phase !== "game") { return; }
+                continue;
+            }
+            if (o.y > ROAD_BOTTOM) {
+                hideObs(i);
+                score += 10;
                 continue;
             }
             bind("/panel_game/g_obs" + i, "obs" + i + "Y", Math.round(o.y));
@@ -497,7 +526,7 @@
             speedLevel++;
             baseKmh += 20;
             boostCd = BOOST_SEC;
-            toast("SPEED LEVEL " + speedLevel + "!");
+            toast(speedLevel === BLIND_LEVEL ? "TOO FAST TO SEE" : "SPEED LEVEL " + speedLevel + "!");
         }
         if (elapsed >= HERO_SEC && !heroMode) {
             heroMode = true;

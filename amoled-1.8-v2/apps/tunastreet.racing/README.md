@@ -34,6 +34,24 @@ Upstream failure is a `502` with a typed message — the panel renders it as
    half of the road to change lanes.
 3. **RESULT** — achievement rank, 56px score, stats, live top-3, **RACE AGAIN**.
 
+## Rules — where the port differs from the browser game
+
+Lives, the 15 s speed ramp (+20 km/h a level), Hero Mode at 2:00 and the iceberg
+past 3,000 points all follow the browser game. Three things are deliberately
+different so the speed only ever climbs and every run ends (#209):
+
+- **The iceberg is a pure +200 pickup.** It never lowers the speed level and never
+  restarts the ramp clock (upstream does both, which lets a player who takes every
+  one hold the game at Lv.1 forever).
+- **Collisions are swept over the whole step**, so at high speed nothing tunnels
+  through the car between two frames.
+- **Blind spawns past Lv.30** (`BLIND_LEVEL`) — the point where an obstacle crosses
+  road-top to car in ~5 ticks, faster than the screen can show it. From there a
+  growing share of villains (to 50 % over 10 levels) spawn partway down the road,
+  some inside the hit band with no warning. Icebergs always spawn at the top. The
+  HUD toasts **TOO FAST TO SEE** at the threshold; an autopilot playing the
+  simulator dies 50–100 s later, run to run.
+
 Artwork is real sprites, not coloured blocks: 44x44 obstacles (traffic cone,
 barrier, drum, rock, hazard, Databricks chevrons, Snowflake bear, iceberg
 power-up) and 56x74 top-down cars, redrawn from the browser game's inline SVGs by

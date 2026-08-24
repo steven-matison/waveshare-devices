@@ -89,7 +89,7 @@ node lint.js --app tunastreet.racing --check
 
 # browser, watchable
 node serve.js --port 8095 &
-node drive.js 30 /tmp/shot "http://127.0.0.1:8095/?app=tunastreet.racing&fixture=1&drive=examples/racing-bot.js&claude=1"
+node drive.js 30 /tmp/shot "http://127.0.0.1:8095/?app=tunastreet.racing&fixture=1&drive=examples/racing-bot.js&autopilot=1"
 # or just open the URL yourself in any browser once serve.js is up.
 ```
 
@@ -204,10 +204,10 @@ instead (`&scale=1` for literal device size).
 
 `panel.html` shows the glass and nothing beside it -- no legend, no node
 inspector, no app switcher. App/driver/fixture selection is query params
-(`?app=`, `&drive=`, `&fixture=1`, `&scale=N`, `&claude=1` to auto-engage the
+(`?app=`, `&drive=`, `&fixture=1`, `&scale=N`, `&autopilot=1` to auto-engage the
 autopilot). The one piece of on-page chrome that shows by itself is the
-**driver button** -- `CLAUDE DRIVES — start` / `— stop`, with `C` as its
-keyboard toggle -- which appears whenever a `?drive=` module is loaded: an
+**driver button** -- `AUTO PILOT`, red when off and green when engaged, with `C`
+as its keyboard toggle -- which appears whenever a `?drive=` module is loaded: an
 autopilot with no on/off switch can only be started from the URL (#219). The
 log strip stays behind `&chrome=1`. Neither ever sits beside the panel, only
 below it. Click/tap a
@@ -234,6 +234,18 @@ Same qualitative behavior, same never-scratched-at-Lv.1 signature the #205
 bot produced. Absolute score differs run to run in both versions (obstacle
 spawn lane/type is `Math.random()`, not seeded) -- that's expected, not a
 regression.
+
+### Post-#209 baseline (2026-08-24)
+
+The table above is the pre-#209 signature and no longer reproduces. #209 made
+the iceberg a pure +200 pickup (no speed-level drop, no ramp-clock reset),
+swept the collision test over the whole step (no tunnelling at high speed)
+and added blind spawns past `BLIND_LEVEL` 30, so the autopilot now dies every
+run. Six 1200 s runs (`--fixture --drive examples/racing-bot.js`, one with
+`--pure`): result panel reached **6/6**, game over at **8:02-8:51**
+(Lv.33-36), 43,650-50,130 pts (`--pure`: 12,890 pts, 8:31), no app errors.
+The run ends 50-100 s after the Lv.30 "TOO FAST TO SEE" toast, and the level
+at any time is exactly `floor(t/15)+1` -- the ramp never stalls or drops.
 
 ## amoled-racing is left in place, but partly redundant now
 

@@ -1,5 +1,5 @@
 /*
- * "Claude drives" (#205, generalised for #212) -- control a real Chromium
+ * Autopilot driver (#205, generalised for #212) -- control a real Chromium
  * window over CDP, for any app the simulator can run.
  *
  * Launches a visible browser on the desktop, opens the panel simulator
@@ -13,7 +13,7 @@
  *
  *   node serve.js &
  *   node drive.js [seconds] [outPrefix] [url]
- *   PANEL_SIM_URL="http://127.0.0.1:8095/?app=tunastreet.xviewer&claude=1" node drive.js 30
+ *   PANEL_SIM_URL="http://127.0.0.1:8095/?app=tunastreet.xviewer&autopilot=1" node drive.js 30
  */
 "use strict";
 const { spawn } = require("child_process");
@@ -21,11 +21,11 @@ const fs = require("fs");
 const path = require("path");
 
 const SECONDS = Number(process.argv[2] || 60);
-const OUT = process.argv[3] || "/tmp/claude-panel-sim";
+const OUT = process.argv[3] || "/tmp/panel-sim";
 const TARGET_URL = process.argv[4] || process.env.PANEL_SIM_URL ||
-    "http://127.0.0.1:8095/?app=tunastreet.racing&drive=examples/racing-bot.js&claude=1";
+    "http://127.0.0.1:8095/?app=tunastreet.racing&drive=examples/racing-bot.js&autopilot=1";
 const PORT = 9333;
-const PROFILE_DIR = process.env.PANEL_SIM_CHROME_PROFILE || "/tmp/claude-panel-sim-chrome-profile";
+const PROFILE_DIR = process.env.PANEL_SIM_CHROME_PROFILE || "/tmp/panel-sim-chrome-profile";
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
@@ -117,10 +117,10 @@ process.on("SIGTERM", () => { closeChrome(); process.exit(143); });
         console.log("[drive] attached to", target.url);
         await sleep(2500);   // app boot + first fetch
 
-        // make sure the autopilot is engaged even if ?claude= raced the load
+        // make sure the autopilot is engaged even if ?autopilot= raced the load
         await cdp.send("Runtime.evaluate", {
             expression: `(() => { const b = document.getElementById("auto");
-                if (b && !b.disabled && b.textContent.indexOf("DRIVING") < 0) b.click();
+                if (b && !b.disabled && b.dataset.on !== "1") b.click();
                 return b ? b.textContent : "no button"; })()`,
         });
 

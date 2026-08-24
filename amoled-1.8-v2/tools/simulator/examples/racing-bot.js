@@ -1,5 +1,5 @@
 /*
- * "Claude drives" tunastreet.racing (#205, moved out of the core for #212).
+ * Autopilot for tunastreet.racing (#205, moved out of the core for #212).
  *
  * Reads the same view state the screen shows (obstacle sprites and
  * positions, the car's lane) and picks a lane, exactly as a player would
@@ -38,10 +38,9 @@
 
     function Bot(shim, opts) {
         this.shim = shim;
-        // Iceberg farming is a degenerate strategy: each pickup drops the speed
-        // level, so a bot that grabs every one pins difficulty at Lv.1 forever
-        // (measured: 20 min / 44,860 pts, never scratched). "pure" mode dodges
-        // them too, so the run is an honest test of the difficulty curve.
+        // Icebergs are a pure +200 pickup (#209): they no longer drop the speed
+        // level, so chasing them is just points. "pure" mode dodges them too,
+        // which makes the run a test of the difficulty curve alone.
         this.pure = !!(opts && opts.pure);
         this.node = function (p) { return shim.doc.byPath[p]; };
     }
