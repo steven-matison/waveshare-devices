@@ -6,6 +6,14 @@
 # CaptureImage (no OV2640 — drops the esp32-camera dependency) and
 # GetGPIO/SetGPIO (control lines are behind the TCA9554).
 #
+# AMOLED processor set (7): GenerateFlowFile, LogAttribute, UpdateAttribute,
+# PublishMQTT, ListenHTTP, PublishSparkplug, GetIMU (#191). GetIMU is guarded
+# by MICROFI_BOARD_QMI8658 (get_imu.cpp itself is a no-op translation unit
+# without it, so the XIAO PlatformIO builds are unaffected by listing it in
+# SRCS) and owns the QMI8658 outright via the shared I2C bus
+# (esp_board_manager's esp_board_periph_get_handle("i2c_master", ...)) —
+# nothing in Brookesia touches the IMU.
+#
 # WHOLE_ARCHIVE keeps the processor auto-registration (static-constructor
 # side effects) from being dropped by the linker.
 
@@ -45,6 +53,7 @@ idf_component_register(
     "${MICROFI_ROOT}/src/processors/update_attribute.cpp"
     "${MICROFI_ROOT}/src/processors/listen_http.cpp"
     "${MICROFI_ROOT}/src/processors/publish_sparkplug.cpp"
+    "${MICROFI_ROOT}/src/processors/get_imu.cpp"
     ${MICROFI_CJSON_SRCS}
   INCLUDE_DIRS
     "${MICROFI_ROOT}/src"
@@ -65,8 +74,10 @@ idf_component_register(
     driver
     esp_driver_gpio
     esp_driver_tsens
+    esp_driver_i2c
     esp_http_server
     sparkplug
+    esp_board_manager
   LDFRAGMENTS "linker.lf"
   WHOLE_ARCHIVE
 )
@@ -76,4 +87,5 @@ target_compile_definitions(
   PRIVATE
     CJSON_NESTING_LIMIT=1000
     CJSON_CIRCULAR_LIMIT=10000
+    MICROFI_BOARD_QMI8658=1
 )

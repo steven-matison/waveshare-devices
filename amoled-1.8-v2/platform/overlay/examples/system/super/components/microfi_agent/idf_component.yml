@@ -1,0 +1,13 @@
+dependencies:
+  # microfi_agent's CMakeLists.txt REQUIRES "littlefs" unconditionally (the
+  # agent's flow/flowfile persistence). This component dir had no manifest
+  # of its own before #191's GetIMU work added one -- littlefs was only
+  # present as a leftover fetch from an earlier, unrelated solve. Adding
+  # this idf_component.yml is what first triggers a full dependency
+  # re-solve for this directory, and the solver correctly deletes anything
+  # not declared in a manifest as "unused" -- so littlefs must be declared
+  # here too, or it gets pruned out from under the REQUIRES that needs it.
+  joltwallet/littlefs: "^1.14.0"
+  waveshare/qmi8658: "^2.0.0"
+  idf:
+    version: ">=6.0"
