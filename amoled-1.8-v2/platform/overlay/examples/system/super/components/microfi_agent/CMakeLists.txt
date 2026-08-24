@@ -6,8 +6,11 @@
 # CaptureImage (no OV2640 — drops the esp32-camera dependency) and
 # GetGPIO/SetGPIO (control lines are behind the TCA9554).
 #
-# AMOLED processor set (7): GenerateFlowFile, LogAttribute, UpdateAttribute,
-# PublishMQTT, ListenHTTP, PublishSparkplug, GetIMU (#191). GetIMU is guarded
+# AMOLED processor set (8): GenerateFlowFile, LogAttribute, UpdateAttribute,
+# PublishMQTT, ListenHTTP, PublishSparkplug, GetIMU (#191), DisplayMessage
+# (#227). DisplayMessage is guarded by MICROFI_BOARD_DISPLAY_MESSAGE the same
+# way and only writes the display-message mailbox (src/display_message.cpp);
+# the agent status tile renders it. GetIMU is guarded
 # by MICROFI_BOARD_QMI8658 (get_imu.cpp itself is a no-op translation unit
 # without it, so the XIAO PlatformIO builds are unaffected by listing it in
 # SRCS) and owns the QMI8658 outright via the shared I2C bus
@@ -47,6 +50,7 @@ idf_component_register(
     "${MICROFI_ROOT}/src/flow_store.cpp"
     "${MICROFI_ROOT}/src/flowfile_store.cpp"
     "${MICROFI_ROOT}/src/agent.cpp"
+    "${MICROFI_ROOT}/src/display_message.cpp"
     "${MICROFI_ROOT}/src/processors/generate_flowfile.cpp"
     "${MICROFI_ROOT}/src/processors/log_attribute.cpp"
     "${MICROFI_ROOT}/src/processors/publish_mqtt.cpp"
@@ -54,6 +58,7 @@ idf_component_register(
     "${MICROFI_ROOT}/src/processors/listen_http.cpp"
     "${MICROFI_ROOT}/src/processors/publish_sparkplug.cpp"
     "${MICROFI_ROOT}/src/processors/get_imu.cpp"
+    "${MICROFI_ROOT}/src/processors/display_message.cpp"
     ${MICROFI_CJSON_SRCS}
   INCLUDE_DIRS
     "${MICROFI_ROOT}/src"
@@ -88,4 +93,5 @@ target_compile_definitions(
     CJSON_NESTING_LIMIT=1000
     CJSON_CIRCULAR_LIMIT=10000
     MICROFI_BOARD_QMI8658=1
+    MICROFI_BOARD_DISPLAY_MESSAGE=1
 )

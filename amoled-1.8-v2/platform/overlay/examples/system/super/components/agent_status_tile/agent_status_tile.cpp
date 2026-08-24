@@ -11,6 +11,8 @@
 //
 // Data sources (all read-only):
 //   - microfi::agent_id() / manifest_hash()          identity + manifest
+//   - microfi::display_message_copy()               DisplayMessage mailbox
+//                                                    (#227 -- flow-sent text)
 //   - microfi::c2_last_heartbeat_age_ms()/count()    heartbeat (additive
 //     getters added to MicroFi's c2_client for this tile)
 //   - microfi::FlowEngine::instance()                flow id + graph shape
@@ -35,6 +37,7 @@
 
 #include "microfi/agent_id.h"
 #include "microfi/c2_client.h"
+#include "microfi/display_message.h"
 #include "microfi/flow_engine.h"
 #include "microfi/manifest.h"
 
@@ -94,6 +97,12 @@ constexpr const char *ROOT_JSON = R"JSON({
                  "placement": {"mode": "flow", "width": "match"}},
                 {"type": "label", "id": "l_tasks", "labelProps": {"text": "tasks: -"},
                  "style": {"textColor": "#ffffff", "fontSize": 14},
+                 "placement": {"mode": "flow", "width": "match"}},
+                {"type": "label", "id": "l_msg_hdr", "labelProps": {"text": "message: none yet"},
+                 "style": {"textColor": "#00d18f", "fontSize": 14},
+                 "placement": {"mode": "flow", "width": "match"}},
+                {"type": "label", "id": "l_msg", "labelProps": {"text": ""},
+                 "style": {"textColor": "#ffd166", "fontSize": 18},
                  "placement": {"mode": "flow", "width": "match"}}
             ]
         },
@@ -282,6 +291,26 @@ private:
             engine_alive ? "yes" : "no"
         );
         set_line(context, "l_tasks", buf);
+
+        // Flow-sent text (#227): whatever the DisplayMessage sink last posted
+        // to the mailbox. The label wraps to the tile width; the header
+        // carries the message counter and age so a repeat of the same text
+        // is still visibly a new arrival.
+        char msg[microfi::kDisplayMessageMaxLen + 1];
+        int64_t msg_age_ms = -1;
+        const uint32_t seq = microfi::display_message_copy(msg, sizeof(msg), &msg_age_ms);
+        if (seq == 0) {
+            set_line(context, "l_msg_hdr", "message: none yet");
+            set_line(context, "l_msg", "");
+        } else {
+            std::snprintf(
+                buf, sizeof(buf), "message #%lu (%llds ago)",
+                static_cast<unsigned long>(seq),
+                static_cast<long long>(msg_age_ms < 0 ? 0 : msg_age_ms / 1000)
+            );
+            set_line(context, "l_msg_hdr", buf);
+            set_line(context, "l_msg", msg);
+        }
     }
 
     system::core::TimerId refresh_timer_id_ = system::core::INVALID_TIMER_ID;
