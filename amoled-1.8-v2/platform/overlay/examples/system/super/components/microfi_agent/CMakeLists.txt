@@ -6,11 +6,15 @@
 # CaptureImage (no OV2640 — drops the esp32-camera dependency) and
 # GetGPIO/SetGPIO (control lines are behind the TCA9554).
 #
-# AMOLED processor set (8): GenerateFlowFile, LogAttribute, UpdateAttribute,
+# AMOLED processor set (10): GenerateFlowFile, LogAttribute, UpdateAttribute,
 # PublishMQTT, ListenHTTP, PublishSparkplug, GetIMU (#191), DisplayMessage
-# (#227). DisplayMessage is guarded by MICROFI_BOARD_DISPLAY_MESSAGE the same
-# way and only writes the display-message mailbox (src/display_message.cpp);
-# the agent status tile renders it. GetIMU is guarded
+# (#227), GetTouch (#191), PlayAudio (#191, MICROFI_BOARD_PLAY_AUDIO --
+# hands a URL to the AudioPlayback service via the header-only helper). DisplayMessage is guarded by
+# MICROFI_BOARD_DISPLAY_MESSAGE the same way and only writes the
+# display-message mailbox (src/display_message.cpp); the agent status tile
+# renders it. GetTouch (MICROFI_BOARD_TOUCH_GESTURE) subscribes to the
+# Brookesia Display service's gesture signal -- the agent's first Brookesia
+# service dependency (brookesia_service_display). GetIMU is guarded
 # by MICROFI_BOARD_QMI8658 (get_imu.cpp itself is a no-op translation unit
 # without it, so the XIAO PlatformIO builds are unaffected by listing it in
 # SRCS) and owns the QMI8658 outright via the shared I2C bus
@@ -59,6 +63,8 @@ idf_component_register(
     "${MICROFI_ROOT}/src/processors/publish_sparkplug.cpp"
     "${MICROFI_ROOT}/src/processors/get_imu.cpp"
     "${MICROFI_ROOT}/src/processors/display_message.cpp"
+    "${MICROFI_ROOT}/src/processors/get_touch.cpp"
+    "${MICROFI_ROOT}/src/processors/play_audio.cpp"
     ${MICROFI_CJSON_SRCS}
   INCLUDE_DIRS
     "${MICROFI_ROOT}/src"
@@ -83,6 +89,10 @@ idf_component_register(
     esp_http_server
     sparkplug
     esp_board_manager
+    brookesia_service_display
+    brookesia_service_helper
+    brookesia_service_manager
+    brookesia_hal_interface
   LDFRAGMENTS "linker.lf"
   WHOLE_ARCHIVE
 )
@@ -94,4 +104,6 @@ target_compile_definitions(
     CJSON_CIRCULAR_LIMIT=10000
     MICROFI_BOARD_QMI8658=1
     MICROFI_BOARD_DISPLAY_MESSAGE=1
+    MICROFI_BOARD_TOUCH_GESTURE=1
+    MICROFI_BOARD_PLAY_AUDIO=1
 )

@@ -69,6 +69,23 @@ endforeach()
 message(STATUS "Tuna Street apps staged from ${TUNASTREET_APPS_DIR}: ${TUNASTREET_APP_PACKAGES}")
 # -----------------------------------------------------------------------------
 
+# --- Tuna Street sound clips (#191 PlayAudio) --------------------------------
+# Small wav/mp3 clips the PlayAudio processor can play by file URL
+# (file://littlefs/sounds/<name>) when the array hands the board a local path
+# instead of an http(s) URL. Copied at configure time into ../littlefs/sounds,
+# a sibling of apps/ and system/, so the partition image carries them. Unlike
+# the apps stage root, nothing wipes this directory between configures.
+if(NOT DEFINED TUNASTREET_SOUNDS_DIR OR "${TUNASTREET_SOUNDS_DIR}" STREQUAL "")
+    set(TUNASTREET_SOUNDS_DIR "${TUNASTREET_APPS_DIR}/../sounds")
+endif()
+get_filename_component(TUNASTREET_SOUNDS_DIR "${TUNASTREET_SOUNDS_DIR}" ABSOLUTE)
+if(IS_DIRECTORY "${TUNASTREET_SOUNDS_DIR}")
+    file(GLOB tunastreet_sound_files "${TUNASTREET_SOUNDS_DIR}/*.wav" "${TUNASTREET_SOUNDS_DIR}/*.mp3")
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/../littlefs/sounds")
+    file(COPY ${tunastreet_sound_files} DESTINATION "${CMAKE_CURRENT_LIST_DIR}/../littlefs/sounds")
+    message(STATUS "Tuna Street sounds staged from ${TUNASTREET_SOUNDS_DIR}: ${tunastreet_sound_files}")
+endif()
+
 get_property(brookesia_runtime_app_stage_targets GLOBAL PROPERTY BROOKESIA_RUNTIME_APP_STAGE_TARGETS)
 if(brookesia_runtime_app_stage_targets)
     list(REMOVE_DUPLICATES brookesia_runtime_app_stage_targets)
