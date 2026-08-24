@@ -68,27 +68,42 @@ function boot(appId) {
 }
 
 /*
- * One drag is one card, and the NEXT drag is the next card.
+ * One drag is one card, and the NEXT drag is the next card -- but getting
+ * there took two rounds, and the second round is why this test now drives a
+ * burst instead of a single emit per drag (#220).
  *
- * This test used to drive `pressed(tap zone) -> gesture x N -> released(tap
- * zone)` and assert a debounce swallowed the extras. Both halves of that model
- * were wrong, which is why the panel kept mis-stepping while the harness stayed
- * green (#220):
+ * Round 1: this test used to drive `pressed(tap zone) -> gesture x N ->
+ * released(tap zone)` and assert a debounce swallowed the extras. Both halves
+ * of that model were wrong, which is why the panel kept mis-stepping while the
+ * harness stayed green:
  *
- *   * The touch layer does NOT emit gesture after gesture. LVGL latches
- *     indev->pointer.gesture_sent on the first gesture of a press, so a drag of
- *     any length produces exactly ONE (lv_indev.c, indev_gesture()).
+ *   * The touch layer does NOT emit gesture after gesture *for that reason*.
+ *     LVGL latches indev->pointer.gesture_sent on the first gesture of a
+ *     press, so a drag of any length produces exactly ONE gesture from LVGL's
+ *     own model (lv_indev.c, indev_gesture()).
  *   * The extra steps came from the tap zones, which covered the very area the
  *     finger drags across and fire on `pressed` AND `released`. One drag =
  *     2 taps + 1 gesture = 3 cards, and the 2 taps went in whichever direction
  *     the drag STARTED.
  *
- * So the fix was structural, not a longer cooldown: neither app has a tap
- * target under the swipe any more (uikit lint R11 now refuses to let one back
- * in), and the debounce is gone. Which makes the second assertion here the
- * important one -- with a cooldown, two real swipes in quick succession scored
- * one card, and that is exactly what "it takes a touch and a swipe to move
- * forward more than once" was.
+ * So round 1's fix was structural and it stands: neither app has a tap target
+ * under the swipe any more (uikit lint R11 now refuses to let one back in).
+ *
+ * Round 2 (#220): removing the tap zones did not fully kill the symptom on
+ * xviewer -- one physical drag on the real glass still produces MORE than one
+ * `xviewer.gesture` event. The working theory is a touch-controller press
+ * drop mid-drag: the finger lifts by a few counts, the controller reports a
+ * release, the next sample re-presses, and LVGL treats that as a brand new
+ * press-to-release cycle with its own gesture latch. This shim only ever
+ * emits exactly what a test tells it to, so this test passing under a single
+ * `shim.emit()` per drag was NEVER proof the device behaves the same way --
+ * it only proved the shim's one-event-per-emit model doesn't reproduce a
+ * hardware quirk it was never built to simulate. xviewer's app.js now carries
+ * a trailing-edge 500ms quiet window (lastGestureMs) to absorb that burst
+ * without swallowing a genuine fast second swipe. The burst case below drives
+ * 3 events within ~150ms real time (one drag's worth of the observed
+ * duplication) and then a real >=600ms gap, to prove the window does both
+ * jobs: net one step for the burst, and still accept the next real swipe.
  */
 async function swipeBurst(appId, action, readIndex, readCount) {
     console.log("\n" + appId + " -- one drag, one card (no tap target under the swipe)");
@@ -107,13 +122,33 @@ async function swipeBurst(appId, action, readIndex, readCount) {
           steppedOnce(before, afterDrag, count),
           "index " + before + " -> " + afterDrag + " of " + count);
 
-    // No quiet window: a second swipe right behind the first must land. The
-    // 350ms cooldown this replaced ate it.
-    const beforeSecond = readIndex(shim);
+    // Clear the quiet window from the drag above before starting the next
+    // gesture -- otherwise its first event reads as a continuation of that
+    // drag rather than a new one.
+    await sleep(600);
+
+    // The burst the glass actually delivers for one physical drag (see the
+    // header comment above): 3 gesture events ~50ms apart, ~100ms of real
+    // time end to end, well inside app.js's 500ms quiet window. Must still
+    // net exactly one step, not three.
+    const beforeBurst = readIndex(shim);
     shim.emit(action, { direction: "left", distance: 180, ms: 600 });
-    check(appId + ": a second swipe immediately after steps again",
-          steppedOnce(beforeSecond, readIndex(shim), count),
-          "index " + beforeSecond + " -> " + readIndex(shim) + " of " + count);
+    await sleep(50);
+    shim.emit(action, { direction: "left", distance: 180, ms: 600 });
+    await sleep(50);
+    shim.emit(action, { direction: "left", distance: 180, ms: 600 });
+    check(appId + ": a 3-event burst inside the quiet window steps exactly once",
+          steppedOnce(beforeBurst, readIndex(shim), count),
+          "index " + beforeBurst + " -> " + readIndex(shim) + " of " + count);
+
+    // Once real time clears the window, the next drag must land normally --
+    // the guard is a quiet window, not a lockout.
+    await sleep(600);
+    const beforeNext = readIndex(shim);
+    shim.emit(action, { direction: "left", distance: 180, ms: 600 });
+    check(appId + ": a gesture >=600ms after the burst steps again",
+          steppedOnce(beforeNext, readIndex(shim), count),
+          "index " + beforeNext + " -> " + readIndex(shim) + " of " + count);
 
     const beforeV = readIndex(shim);
     shim.emit(action, { direction: "up", distance: 120, ms: 100 });

@@ -52,6 +52,7 @@
     var slotCursor = 0;
     var shownSlot = -1;         // slot whose file the image view currently displays
     var likeInFlight = false;
+    var lastGestureMs = 0;   // trailing-edge quiet window for goTo(), see below
     var feedInFlight = false;
     var refreshTimerId = null;
     var retryTimerId = null;
@@ -236,17 +237,30 @@
     }
 
     /**
-     * No navigation debounce, on purpose (#220).
+     * Navigation quiet window, added back after #220 shipped without one.
      *
-     * The old guards existed because one drag scored several cards. That was
-     * never "the touch layer emits many gesture events" -- LVGL latches
-     * `indev->pointer.gesture_sent` on the first gesture of a press and sends
-     * exactly one per finger-down/up (lv_indev.c, indev_gesture()). The extra
-     * cards came from the prev/next tap zones firing on `pressed` AND on
-     * `released` under the same drag. Those zones are gone, so one drag is one
-     * gesture is one card, and a cooldown would only swallow the second of two
-     * quick swipes. LIKE keeps its own guard (likeInFlight), which is what a
-     * real tap target needs against the deliberate pressed+released pair.
+     * The reasoning above was that one drag is one LV_EVENT_GESTURE, full
+     * stop: LVGL latches `indev->pointer.gesture_sent` on the first gesture of
+     * a press and is documented to send exactly one per finger-down/up
+     * (lv_indev.c, indev_gesture()), and the doubled steps under the old
+     * prev/next tap zones were fully explained by pressed+released firing
+     * twice. That's still true of LVGL's own model -- but it is not what the
+     * glass does. With the zones gone and swipe as the only nav path, a
+     * single physical drag still steps more than one card on the device. The
+     * working theory is a touch-controller press drop mid-drag: the finger
+     * lifts by a few counts, the controller reports a release, the next
+     * sample re-presses, and LVGL treats that as a brand new press-to-release
+     * cycle with its own gesture latch -- so one drag can hand app.js two or
+     * three `xviewer.gesture` events instead of one.
+     *
+     * The fix is a trailing-edge quiet window, not a leading-edge debounce:
+     * every horizontal gesture event -- accepted or not -- stamps
+     * lastGestureMs to now, and an event only calls goTo() if at least 500ms
+     * has passed since the last stamp. Stamping unconditionally is the point:
+     * a long drag that keeps re-firing keeps pushing the window out, so the
+     * whole drag nets one step, not one step per 500ms of drag duration.
+     * LIKE keeps its own separate guard (likeInFlight), which is what a real
+     * tap target needs against the deliberate pressed+released pair.
      */
 
     // ---------------------------------------------------------------- HTTP
@@ -618,7 +632,12 @@
                     // gesture (handled at the display-port layer) is never
                     // interfered with.
                     if (payload.direction === "left" || payload.direction === "right") {
-                        goTo(payload.direction === "left" ? idx + 1 : idx - 1);
+                        var now = Date.now();
+                        var accept = (now - lastGestureMs) >= 500;
+                        lastGestureMs = now; // stamp on every event, accepted or not
+                        if (accept) {
+                            goTo(payload.direction === "left" ? idx + 1 : idx - 1);
+                        }
                     }
                 } else if (action === "xviewer.like") {
                     toggleLike();

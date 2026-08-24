@@ -715,7 +715,7 @@
                         "mode": "absolute",
                         "x": 0,
                         "y": 4,
-                        "width": 92,
+                        "width": 122,
                         "height": 36
                     },
                     "layout": {
@@ -737,7 +737,7 @@
                         "mode": "absolute",
                         "x": 0,
                         "y": 42,
-                        "width": 92,
+                        "width": 122,
                         "height": 20
                     },
                     "layout": {
@@ -757,9 +757,9 @@
                     "id": "mx_mem_v",
                     "placement": {
                         "mode": "absolute",
-                        "x": 92,
+                        "x": 122,
                         "y": 4,
-                        "width": 92,
+                        "width": 122,
                         "height": 36
                     },
                     "layout": {
@@ -779,9 +779,9 @@
                     "id": "mx_mem_c",
                     "placement": {
                         "mode": "absolute",
-                        "x": 92,
+                        "x": 122,
                         "y": 42,
-                        "width": 92,
+                        "width": 122,
                         "height": 20
                     },
                     "layout": {
@@ -801,9 +801,9 @@
                     "id": "mx_beats_v",
                     "placement": {
                         "mode": "absolute",
-                        "x": 184,
+                        "x": 244,
                         "y": 4,
-                        "width": 92,
+                        "width": 122,
                         "height": 36
                     },
                     "layout": {
@@ -823,9 +823,9 @@
                     "id": "mx_beats_c",
                     "placement": {
                         "mode": "absolute",
-                        "x": 184,
+                        "x": 244,
                         "y": 42,
-                        "width": 92,
+                        "width": 122,
                         "height": 20
                     },
                     "layout": {
@@ -838,50 +838,6 @@
                     },
                     "labelProps": {
                         "text": "BEATS"
-                    }
-                },
-                {
-                    "type": "label",
-                    "id": "mx_queue_v",
-                    "placement": {
-                        "mode": "absolute",
-                        "x": 276,
-                        "y": 4,
-                        "width": 92,
-                        "height": 36
-                    },
-                    "layout": {
-                        "type": "none"
-                    },
-                    "style": {
-                        "textColor": "#f0f0f0",
-                        "fontSize": 28,
-                        "textAlign": "center"
-                    },
-                    "labelProps": {
-                        "text": "--"
-                    }
-                },
-                {
-                    "type": "label",
-                    "id": "mx_queue_c",
-                    "placement": {
-                        "mode": "absolute",
-                        "x": 276,
-                        "y": 42,
-                        "width": 92,
-                        "height": 20
-                    },
-                    "layout": {
-                        "type": "none"
-                    },
-                    "style": {
-                        "textColor": "#888888",
-                        "fontSize": 16,
-                        "textAlign": "center"
-                    },
-                    "labelProps": {
-                        "text": "QUEUE"
                     }
                 }
             ]
@@ -912,7 +868,7 @@
             "children": [
                 {
                     "type": "label",
-                    "id": "foot_age",
+                    "id": "foot_id",
                     "placement": {
                         "mode": "absolute",
                         "x": 8,
@@ -930,28 +886,6 @@
                     },
                     "labelProps": {
                         "text": "connecting..."
-                    }
-                },
-                {
-                    "type": "label",
-                    "id": "foot_id",
-                    "placement": {
-                        "mode": "absolute",
-                        "x": 8,
-                        "y": 24,
-                        "width": 352,
-                        "height": 20
-                    },
-                    "layout": {
-                        "type": "none"
-                    },
-                    "style": {
-                        "textColor": "#888888",
-                        "fontSize": 16,
-                        "textAlign": "center"
-                    },
-                    "labelProps": {
-                        "text": ""
                     }
                 }
             ]

@@ -51,6 +51,7 @@
     var sweep = 0;
     var sweepColor = null;    // last colour painted, so a tick can repaint 2 cells not 12
     var sweepBeating = null;
+    var lastBeats = "";       // last BEATS string written, so the tick path can't rewrite it unchanged
     var inFlight = false;
     var inFlightTicks = 0;   // ag_tick ticks the current request has been outstanding
     var pendingHttp = {};
@@ -307,7 +308,6 @@
         var age = beatAge();
         setText("/beat/beat_v", age < 0 ? "--" : shortDur(age));
         setBinding("/beat/beat_v", "beatColor", liveColor());
-        setText("/foot/foot_age", snap ? "updated " + ticks + "s ago" : "connecting...");
     }
 
     function render() {
@@ -315,6 +315,7 @@
             setText("/head/head_state", "...");
             setBinding("/head/head_state", "stateColor", MUTED);
             setText("/proc/proc_v", "--");
+            setText("/foot/foot_id", "connecting...");
             return;
         }
 
@@ -334,8 +335,15 @@
 
         setText("/mx/mx_uptime_v", tightDur(snap.uptime_s));
         setText("/mx/mx_mem_v", mib(snap.mem_bytes));
-        setText("/mx/mx_beats_v", String(snap.heartbeat_count || 0));
-        setText("/mx/mx_queue_v", String(snap.flowfile_queued));
+        // Guarded: the tick path (renderClock, once a second) never touches
+        // this field, but a rewrite on every render for a counter that only
+        // moves once per backend poll is exactly the kind of needless
+        // mutation that scrambled this cell before (#220).
+        var beatsStr = String(snap.heartbeat_count || 0);
+        if (beatsStr !== lastBeats) {
+            lastBeats = beatsStr;
+            setText("/mx/mx_beats_v", beatsStr);
+        }
 
         setText("/foot/foot_id", snap.agent_id + "  " + snap.agent_type + " " + snap.agent_version);
 
@@ -428,7 +436,6 @@
             inFlightTicks = 0;
             if (!httpOk(response)) {
                 log("status failed:", response.error_message || response.error || response.status_code);
-                setText("/foot/foot_age", "backend unreachable - retrying");
                 startRetry();
                 return;
             }
@@ -534,7 +541,6 @@
                         pendingHttp = {};
                         inFlight = false;
                         inFlightTicks = 0;
-                        setText("/foot/foot_age", "backend unreachable - retrying");
                         fetchStatus();
                     }
                 } else if (name === "ag_refresh") {

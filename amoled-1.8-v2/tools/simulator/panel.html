@@ -20,8 +20,11 @@
 
      The driver button is shown whenever a ?drive= module is loaded -- it is
      the autopilot's on/off switch and there is no other way to reach it
-     (#219). The log strip stays behind ?chrome=1. Neither ever sits beside
-     the panel, only below it. */
+     (#219). The log strip stays behind ?chrome=1. The prev/next nav buttons
+     (#220) are unrelated to either flag: they show whenever the resolved
+     app's screen root declares a `gesture` event, so a tap or drive session
+     can still step xviewer/tminus by hand without a keyboard. None of this
+     chrome ever sits beside the panel, only below it. */
   html, body { height:100%; }
   body { background:#0b0b0d; color:#ddd; font-family:'Segoe UI',sans-serif; margin:0;
          display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
@@ -42,6 +45,14 @@
   #bar button { padding:5px 11px; font-size:11px; border-radius:7px; border:1px solid #555;
                 background:#F96702; color:#111; font-weight:700; cursor:pointer; }
   #bar button:disabled { background:#333; color:#777; cursor:default; }
+  /* Sim-only prev/next, shown only for an app whose screen root declares a
+     `gesture` event (xviewer, tminus) -- never drawn inside the panel and
+     never shipped in any res/screens JSON. Hidden by default; JS flips this
+     to flex once the loaded package is known to nav (see the wire-up below). */
+  #navbar { display:none; gap:10px; justify-content:center; align-items:center; }
+  #navbar button { padding:6px 18px; font-size:16px; border-radius:7px; border:1px solid #555;
+                   background:#F96702; color:#111; font-weight:700; cursor:pointer; }
+  #navbar button:active { background:#c9540a; }
   #log { max-height:90px; overflow:auto; background:#111; border:1px solid #333;
          border-radius:8px; padding:6px 8px; font-family:ui-monospace,Menlo,monospace; font-size:10px;
          white-space:pre-wrap; color:#888; }
@@ -52,6 +63,10 @@
 <body>
 <div id="err"></div>
 <div id="stage"><div id="panel"></div></div>
+<div id="navbar">
+  <button id="navPrev" title="prev (swipe right)">&lt;</button>
+  <button id="navNext" title="next (swipe left)">&gt;</button>
+</div>
 <div id="bar">
   <button id="auto" disabled>CLAUDE DRIVES — start</button>
   <span id="autostate" style="color:#888"></span>
@@ -83,7 +98,8 @@ const stageEl = document.getElementById("stage");
 let SCALE = 1;
 function applyScale() {
   const barEl = document.getElementById("bar"), logStrip = document.getElementById("log");
-  const chromeH = [barEl, logStrip]
+  const navbarEl = document.getElementById("navbar");
+  const chromeH = [barEl, logStrip, navbarEl]
     .filter((el) => el && el.offsetParent !== null)
     .reduce((h, el) => h + el.offsetHeight + 8, 0);
   if (SCALE_PARAM > 0) {
@@ -101,6 +117,7 @@ function applyScale() {
   stageEl.style.borderRadius = (22 * SCALE) + "px";
   barEl.style.width = (PANEL_W * SCALE) + "px";
   logStrip.style.width = (PANEL_W * SCALE) + "px";
+  navbarEl.style.width = (PANEL_W * SCALE) + "px";
 }
 applyScale();
 window.addEventListener("resize", applyScale);
@@ -322,6 +339,31 @@ DomRenderer.prototype.render = function () {
     return;
   }
   log("[sim] " + APP + " started (screen: " + pkg.screenId + ")");
+
+  // ---- sim-only prev/next nav buttons, outside the panel ------------------
+  // Shown only for an app whose screen root declares a `gesture` event
+  // (xviewer, tminus today) -- exactly the same event the swipe synthesis
+  // below fires, through shim.emit() and on to the app's on_action, so
+  // xviewer's quiet-window guard (lastGestureMs) applies to a button click
+  // the same way it applies to a real swipe: a click every 500ms+ steps,
+  // two clicks inside the window count as one. Never drawn inside the
+  // 368x448 panel, never present in any res/screens JSON -- this is
+  // harness-only chrome for stepping through a feed/countdown by hand.
+  const rootGestureEv = (pkg.screen.events || []).find((ev) => ev.type === "gesture");
+  if (rootGestureEv) {
+    document.getElementById("navbar").style.display = "flex";
+    function emitNav(direction) {
+      const payload = { direction, distance: 180, ms: 200 };
+      log("[navbtn] " + direction + " -> " + rootGestureEv.action);
+      shim.emit(rootGestureEv.action, payload);
+    }
+    // Left = next, right = prev -- same mapping the swipe synthesis below
+    // uses (dragging the card left advances it), so the buttons read the
+    // same way a swipe would.
+    document.getElementById("navPrev").addEventListener("click", () => emitNav("right"));
+    document.getElementById("navNext").addEventListener("click", () => emitNav("left"));
+    applyScale(); // the navbar's row is real now; re-fit around it
+  }
 
   // drive the emulated clock in real time
   let last = performance.now();

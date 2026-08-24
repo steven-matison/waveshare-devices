@@ -131,50 +131,6 @@
                     "bindings": {
                         "commonProps.hidden": "imgHidden"
                     }
-                },
-                {
-                    "type": "label",
-                    "id": "chev_prev",
-                    "placement": {
-                        "mode": "absolute",
-                        "x": 16,
-                        "y": 90,
-                        "width": 40,
-                        "height": 40
-                    },
-                    "layout": {
-                        "type": "none"
-                    },
-                    "style": {
-                        "textColor": "#888888",
-                        "fontSize": 32,
-                        "textAlign": "center"
-                    },
-                    "labelProps": {
-                        "text": "<"
-                    }
-                },
-                {
-                    "type": "label",
-                    "id": "chev_next",
-                    "placement": {
-                        "mode": "absolute",
-                        "x": 312,
-                        "y": 90,
-                        "width": 40,
-                        "height": 40
-                    },
-                    "layout": {
-                        "type": "none"
-                    },
-                    "style": {
-                        "textColor": "#888888",
-                        "fontSize": 32,
-                        "textAlign": "center"
-                    },
-                    "labelProps": {
-                        "text": ">"
-                    }
                 }
             ]
         },

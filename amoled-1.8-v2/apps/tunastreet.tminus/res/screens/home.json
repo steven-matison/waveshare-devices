@@ -177,50 +177,6 @@
         },
         {
             "type": "label",
-            "id": "nav_prev_g",
-            "placement": {
-                "mode": "absolute",
-                "x": 8,
-                "y": 271,
-                "width": 44,
-                "height": 44
-            },
-            "layout": {
-                "type": "none"
-            },
-            "style": {
-                "textColor": "#888888",
-                "fontSize": 40,
-                "textAlign": "center"
-            },
-            "labelProps": {
-                "text": "<"
-            }
-        },
-        {
-            "type": "label",
-            "id": "nav_next_g",
-            "placement": {
-                "mode": "absolute",
-                "x": 316,
-                "y": 271,
-                "width": 44,
-                "height": 44
-            },
-            "layout": {
-                "type": "none"
-            },
-            "style": {
-                "textColor": "#888888",
-                "fontSize": 40,
-                "textAlign": "center"
-            },
-            "labelProps": {
-                "text": ">"
-            }
-        },
-        {
-            "type": "label",
             "id": "pad",
             "placement": {
                 "mode": "absolute",
