@@ -57,6 +57,17 @@ Everything else arrives without reflashing:
 Built on the desk at Tuna Street. The V2 HAL board is a candidate for an
 upstream esp-brookesia PR.
 
+### Apps
+
+Five ESP-Brookesia v0.8 runtime app packages, each published as its own repo
+with its own release history:
+
+- [`amoled-agent`](https://github.com/TunaStreetTest/amoled-agent) — MicroFi EFM agent monitor: live heartbeat, processor count, and the metrics the board ships to Cloudera Edge Flow Manager.
+- [`amoled-racing`](https://github.com/TunaStreetTest/amoled-racing) — live Cloudera Racing leaderboard plus a three-screen mini racing game, sprites rasterised from the upstream game's own SVGs.
+- [`amoled-tminus`](https://github.com/TunaStreetTest/amoled-tminus) — a true-black launch clock counting down to the next real rocket launch (Launch Library 2).
+- [`amoled-xviewer`](https://github.com/TunaStreetTest/amoled-xviewer) — swipe an X feed one card at a time, tap to like.
+- [`amoled-hello`](https://github.com/TunaStreetTest/amoled-hello) — the minimal runtime app template: one label on a black screen, the starting point for a new app.
+
 ## xiao-esp32s3-sense — Seeed XIAO ESP32-S3 Sense
 
 Three Seeed XIAO ESP32-S3 Sense units (8 MB flash + octal PSRAM), each running
