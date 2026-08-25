@@ -12,13 +12,16 @@ Everything else arrives without reflashing:
   a new tile appears on the launcher. `apps/tunastreet.hello/` here is, as far
   as we know, the first runtime package built for Brookesia v0.8 outside
   Espressif — upstream ships the runtime but no example package.
-- **The device is a fleet citizen.** A [MicroFi](https://github.com/) EFM/MiNiFi
-  C2 agent runs inside the platform image as a native background component:
-  it adopts Brookesia's WiFi, heartbeats to Cloudera Edge Flow Manager, and
-  receives flow definitions over C2 — while the launcher keeps running. The
-  board's senses are its processors: `GetIMU` (QMI8658, with a motion
-  threshold so a bump is an event) and `DisplayMessage` (a flow-sent string
-  rendered on the agent's status tile).
+- **The device is a fleet citizen.** A MicroFi EFM/MiNiFi C2 agent runs inside
+  the platform image as a native background component: it adopts Brookesia's
+  WiFi, heartbeats to Cloudera Edge Flow Manager, and receives flow definitions
+  over C2 — while the launcher keeps running. The board's senses are its
+  processors: `GetIMU` (QMI8658, with a motion threshold so a bump is an
+  event), `DisplayMessage` (a flow-sent string — it reaches the device's
+  mailbox, but the only tile that painted it is currently hidden, so there is
+  no visible surface for it yet), `GetTouch` (taps and swipes as events, with
+  coordinates and speed), `PlayAudio` (the board pulls and plays a clip by
+  URL), and `CaptureAudio` (mic clips out as WAV).
 
 ## Layout
 

@@ -3,8 +3,8 @@
 Tuna Street's platform work on small ESP32 devices under Cloudera Edge Flow Manager. One
 directory per board: the Waveshare 1.8″ AMOLED (a full launcher platform with an EFM agent
 running inside it) and the Seeed XIAO ESP32-S3 Sense (three headless agents). Both run
-[MicroFi](https://github.com/) — a clean-room microcontroller MiNiFi C2 agent, published
-separately.
+MicroFi — a clean-room microcontroller MiNiFi C2 agent, not yet published as its own
+public repo.
 
 ## amoled-1.8-v2 — Waveshare ESP32-S3-Touch-AMOLED-1.8 V2
 
@@ -20,13 +20,16 @@ Everything else arrives without reflashing:
   a new tile appears on the launcher. `apps/tunastreet.hello/` here is, as far
   as we know, the first runtime package built for Brookesia v0.8 outside
   Espressif — upstream ships the runtime but no example package.
-- **The device is a fleet citizen.** A [MicroFi](https://github.com/) EFM/MiNiFi
-  C2 agent runs inside the platform image as a native background component:
-  it adopts Brookesia's WiFi, heartbeats to Cloudera Edge Flow Manager, and
-  receives flow definitions over C2 — while the launcher keeps running. The
-  board's senses are its processors: `GetIMU` (QMI8658, with a motion
-  threshold so a bump is an event) and `DisplayMessage` (a flow-sent string
-  onto the glass).
+- **The device is a fleet citizen.** A MicroFi EFM/MiNiFi C2 agent runs inside
+  the platform image as a native background component: it adopts Brookesia's
+  WiFi, heartbeats to Cloudera Edge Flow Manager, and receives flow definitions
+  over C2 — while the launcher keeps running. The board's senses are its
+  processors: `GetIMU` (QMI8658, with a motion threshold so a bump is an
+  event), `DisplayMessage` (a flow-sent string — it reaches the device's
+  mailbox, but the only tile that painted it is currently hidden, so there is
+  no visible surface for it yet), `GetTouch` (taps and swipes as events, with
+  coordinates and speed), `PlayAudio` (the board pulls and plays a clip by
+  URL), and `CaptureAudio` (mic clips out as WAV).
 
 ### Layout
 
@@ -70,6 +73,14 @@ Everything else arrives without reflashing:
 - The launcher grid comes from `constants/portrait.json` (3 columns, 108dp
   tile, 16dp gap): nine tiles fit without scrolling. Launcher order is install
   order — natives first — and no manifest field changes it.
+- The V2 amplifier is inaudible below `Volume: 100` — a clip at the default
+  volume runs to `FINISHED` and is silent.
+- `sounds/` is staged into littlefs at CMake **configure** time, not build
+  time — `idf.py reconfigure` is needed before the build or the image
+  silently keeps the old set of clips.
+- `AudioEncoder0` is initialised but not started at boot (only an AI-agent
+  session binds it), so `CaptureAudio` has to bind and start the encoder
+  itself and release it on stop.
 
 Built on the desk at Tuna Street. The V2 HAL board is a candidate for an
 upstream esp-brookesia PR.
@@ -84,6 +95,24 @@ with its own release history:
 - [`amoled-tminus`](https://github.com/TunaStreetTest/amoled-tminus) — a true-black launch clock counting down to the next real rocket launch (Launch Library 2).
 - [`amoled-xviewer`](https://github.com/TunaStreetTest/amoled-xviewer) — swipe an X feed one card at a time, tap to like.
 - [`amoled-hello`](https://github.com/TunaStreetTest/amoled-hello) — the minimal runtime app template: one label on a black screen, the starting point for a new app.
+
+### Processors
+
+The AMOLED's `microfi_agent` compiles 11 processors:
+
+| Processor | What it does |
+|---|---|
+| `GenerateFlowFile` | Emits an empty or templated FlowFile on a timer — the flow's clock |
+| `LogAttribute` | Writes a FlowFile's attributes to the agent log |
+| `UpdateAttribute` | Adds or overwrites FlowFile attributes |
+| `PublishMQTT` | Publishes a FlowFile to an MQTT topic |
+| `ListenHTTP` | Accepts inbound HTTP POSTs as FlowFiles |
+| `PublishSparkplug` | Emits Sparkplug B NBIRTH/NDATA over MQTT |
+| `GetIMU` | QMI8658 motion events, threshold-gated so a bump is an event |
+| `DisplayMessage` | Writes a flow-sent string to the display-message mailbox |
+| `GetTouch` | Taps and swipes as events, via the Brookesia Display service's gesture signal — coordinates and speed included |
+| `PlayAudio` | Hands a clip URL to the AudioPlayback service to play |
+| `CaptureAudio` | Binds the AudioEncoder0 service and ships mic clips out as WAV |
 
 ## xiao-esp32s3-sense — Seeed XIAO ESP32-S3 Sense
 
@@ -106,16 +135,19 @@ heartbeat → flow. Not a Waveshare board; small-device work lives together here
 - No deployer command. Class and id are compile-time; EFM creates the class on the first
   heartbeat, and the agent acknowledges every C2 apply explicitly (`FULLY_APPLIED` /
   `NOT_APPLIED`).
-- A compile-time processor registry — `GenerateFlowFile`, `PublishMQTT`, `ListenHTTP`,
-  `SetGPIO`, `CaptureImage`, `PublishSparkplug`. A new capability is a rebuild + reflash, not
-  a flow change, and there is no Expression Language.
+- A compile-time processor registry — `GenerateFlowFile`, `LogAttribute`, `PublishMQTT`,
+  `UpdateAttribute`, `GetGPIO`, `ListenHTTP`, `SetGPIO`, `CaptureImage`, `PublishSparkplug`
+  (9). A new capability is a rebuild + reflash, not a flow change, and there is no
+  Expression Language.
 - Liveness on GPIO21: the orange user LED strobes at 1 s only once every fatal-init gate in
   boot is cleared. A dark LED means boot never finished — not a flow or C2 symptom. The red LED
   is the BQ25101 charge indicator, wired to the charger, never drivable from firmware.
 
 ### Limits that shape every flow
 
-- **4 processors per flow** (`kMaxFlowNodes`) — the engine silently drops anything past it.
+- **4 processors per flow** (`kMaxFlowNodes`) — shared by both boards, the engine silently
+  drops anything past it. It's why the AMOLED class flow only fits two sense pairs at once
+  and has had to swap senses in and out.
 - **256-byte FlowFile content ceiling** — bytes (camera JPEGs) go broker-direct over MQTT and a
   small metadata FlowFile rides the chain instead.
 - **Distinct MQTT Client IDs** for every MQTT-owning processor on a device, or the broker kicks
