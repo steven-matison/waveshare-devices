@@ -1,5 +1,5 @@
 {
-    "_comment": "Canned responses for tunastreet.tminus under --fixture. Shape captured from the live backend (~/amoled-tminus/backend/server.py, Launch Library 2 upcoming window) and frozen so a check run is reproducible: a Falcon 9 Starlink launch, card 1 of 8, t0 fixed relative to server_unix so the countdown is always the same T-. tminus steps SERVER-side (POST /tminus/step returns the new card), so a static fixture cannot change idx -- selftest.js asserts on how many step requests a drag issues, not on the rendered index.",
+    "_comment": "Canned responses for tunastreet.tminus under --fixture. Shape captured from the live backend (~/amoled-tminus/backend/server.py, Launch Library 2 upcoming window) and frozen so a check run is reproducible: a Falcon 9 Starlink launch, card 1 of 8, t0 fixed relative to server_unix so the countdown is always the same T-. tminus steps SERVER-side (POST /tminus/step returns the new card), so a static fixture cannot change idx -- selftest.js asserts on how many step requests a drag issues, not on the rendered index. `img` (#222) is the device-facing vehicle-art route, or null on a clean miss (no generated art for that vehicle yet) -- the first card here has art (falcon-9.jpg exists), the second exercises the miss path (no electron.jpg yet) so the harness drives both the download branch and the vector-art fallback branch.",
     "GET /tminus/now": {
         "status_code": 200,
         "body": {
@@ -11,7 +11,8 @@
             "server_unix": 1755800000,
             "status": "Go",
             "idx": 0,
-            "count": 8
+            "count": 8,
+            "img": "/tminus/img/6208f972-18ec-490f-bbe5-6f5c6cfcd48c.jpg"
         }
     },
     "POST /tminus/step": {
@@ -25,7 +26,9 @@
             "server_unix": 1755800000,
             "status": "Go",
             "idx": 1,
-            "count": 8
+            "count": 8,
+            "img": null
         }
-    }
+    },
+    "GET /tminus/img/6208f972-18ec-490f-bbe5-6f5c6cfcd48c.jpg": { "status_code": 200, "body": "" }
 }
