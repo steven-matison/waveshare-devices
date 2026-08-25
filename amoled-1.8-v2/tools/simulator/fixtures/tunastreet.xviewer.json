@@ -5,7 +5,7 @@
         "body": {
             "account": "tunastreet",
             "cached": true,
-            "count": 3,
+            "count": 4,
             "panel": "amoled-1.8-v2",
             "posts": [
                 {
@@ -37,12 +37,23 @@
                     "img": true,
                     "liked": false,
                     "metrics": { "likes": 3, "reposts": 0, "views": 40 }
+                },
+                {
+                    "id": "fx-4",
+                    "author": "tunastreet",
+                    "text": "Fixture post four -- mention avatar path, per @elonmusk (#236).",
+                    "ts": "2026-08-21T18:15:00Z",
+                    "media_type": null,
+                    "img": "/xviewer/img/avatar/elonmusk.jpg",
+                    "liked": false,
+                    "metrics": { "likes": 12, "reposts": 2, "views": 500 }
                 }
             ]
         }
     },
     "GET /xviewer/img/fx-1.jpg": { "status_code": 200, "body": "" },
     "GET /xviewer/img/fx-3.jpg": { "status_code": 200, "body": "" },
+    "GET /xviewer/img/avatar/elonmusk.jpg": { "status_code": 200, "body": "" },
     "POST /xviewer/action": {
         "status_code": 200,
         "body": { "liked": true }

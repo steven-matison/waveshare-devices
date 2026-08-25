@@ -39,7 +39,7 @@
     var FEED_REFRESH_MS = 60000;
     var RETRY_MS = 10000;
     var MAX_TEXT_CHARS = 420;
-    var IMG_SLOTS = 3; // at most 3 JPEGs on flash, rotating fixed names
+    var IMG_SLOTS = 6; // at most 6 JPEGs on flash, rotating fixed names (#236: mention avatars are no longer all the same URL, so 3 slots thrashed)
     var COLOR_MUTED = "#71767b";
     var COLOR_LIKED = "#f91880";
 
@@ -48,7 +48,7 @@
     var idx = 0;
     var navSeq = 0;             // bumps on every render; stale downloads ignored
     var pendingHttp = {};       // request_id (string) -> callback(response)
-    var slotOwner = [null, null, null]; // image URL whose JPEG currently occupies slot
+    var slotOwner = [null, null, null, null, null, null]; // image URL whose JPEG currently occupies slot
     var slotCursor = 0;
     var shownSlot = -1;         // slot whose file the image view currently displays
     var likeInFlight = false;
@@ -488,8 +488,12 @@
             showImageFromSlot(cachedSlot);
             return;
         }
-        // Keyed by URL, not post id: every text post carries the same avatar
-        // URL, so all of them share one cached slot and one download.
+        // Keyed by URL, not post id: previously every text post carried the
+        // same one avatar URL (the account's own), so they all shared one
+        // cached slot and one download. Since #236 a mention avatar can
+        // differ post-to-post (one per mentioned handle), so this can now
+        // spread across several distinct URLs/slots instead of always one --
+        // IMG_SLOTS was raised from 3 to 6 to give that room.
         hideImage(); // black for the moment the download takes
         var slot = pickSlot(url);
         var seqAtRequest = navSeq;
