@@ -1,0 +1,29 @@
+{
+  "name": "cloudera",
+  "description": "Cloudera-branded board (#258, COM10, microfi-2884858d582c). Orange desktop, cloud splash, Agent + RACING in a 2x2, ATT LAN + direct EFM C2.",
+  "brand": {
+    "accent": "#F96702",
+    "desktopBg": "#F96702"
+  },
+  "splash": "background.png",
+  "launcher": {
+    "columns": 2,
+    "gridWidth": "332dp",
+    "itemWidth": "156dp",
+    "itemHeight": "146dp",
+    "itemGap": "20dp",
+    "iconTileSize": "120dp",
+    "iconSize": "120dp",
+    "hideFiles": true
+  },
+  "apps": [
+    "tunastreet.agent",
+    "tunastreet.racing"
+  ],
+  "wifi": {
+    "evictAp": "STARLINK"
+  },
+  "c2": {
+    "baseUrl": "http://192.168.1.121:10090"
+  }
+}

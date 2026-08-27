@@ -1,0 +1,29 @@
+{
+  "name": "tuna-starlink",
+  "description": "StarlinkAI board (#252 / PR #1, microfi-2884858d4cbc). 2x2, tunastarlink.* apps, open STARLINK WiFi, StarlinkAI C2 relay, amber-on-black splash. Data services + relay live on StarlinkAI. Reconcile against PR #1 when it lands.",
+  "brand": {
+    "accent": "#ffb000",
+    "desktopBg": null
+  },
+  "splash": "background.png",
+  "launcher": {
+    "columns": 2,
+    "gridWidth": "332dp",
+    "itemWidth": "156dp",
+    "itemHeight": "146dp",
+    "itemGap": "20dp",
+    "iconTileSize": "120dp",
+    "iconSize": "120dp",
+    "hideFiles": true
+  },
+  "apps": [
+    "tunastarlink.agent",
+    "tunastarlink.xviewer"
+  ],
+  "wifi": {
+    "evictAp": "ATTyjuHfEi"
+  },
+  "c2": {
+    "baseUrl": "http://192.168.1.245:10090"
+  }
+}
