@@ -3,7 +3,14 @@
   "description": "Cloudera-branded board (#258, COM10, microfi-2884858d582c). Orange desktop, cloud splash, Agent + RACING in a 2x2, ATT LAN + direct EFM C2.",
   "brand": {
     "accent": "#F96702",
-    "desktopBg": "#F96702"
+    "desktopBg": "#F96702",
+    "splashBg": "#F96702",
+    "statusBar": {
+      "bgColor": "#7A3200",
+      "borderColor": "#4A1F00",
+      "textColor": "#FFFFFF",
+      "mutedTextColor": "#F3C9AE"
+    }
   },
   "splash": "background.png",
   "launcher": {

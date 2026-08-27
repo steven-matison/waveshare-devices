@@ -30,4 +30,11 @@ project(example_system_super)
 # Temporary workaround for `espressif__mcp-c-sdk` stringop-truncation warning
 idf_build_set_property(COMPILE_OPTIONS -Wno-error=stringop-truncation APPEND)
 
+# Per-board build flags (#260): apply_profile.py generates main/board_profile.cmake
+# from the selected profile and it sets BOARD_HIDE_FILES as a build-wide compile
+# definition (the launcher lives in another component and can't include main/).
+# OPTIONAL so a tree built without a profile applied still configures -- an
+# undefined BOARD_HIDE_FILES means the stock Files tile shows, the generic default.
+include("${CMAKE_CURRENT_LIST_DIR}/main/board_profile.cmake" OPTIONAL)
+
 brookesia_system_super_apply_compile_policy()

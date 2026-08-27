@@ -11,6 +11,10 @@ cd "$(dirname "$0")"
 
 PIN=$(cat PINNED_UPSTREAM)
 WORK=${BROOKESIA_DIR:-"$HOME/esp/esp-brookesia"}
+# Which branded board to build. One overlay, many boards (#260): the generic
+# overlay is tuna-street's, and apply_profile.py patches the selected board's
+# divergences (colour/splash/launcher/apps/wifi/c2) on top. See profiles/.
+BOARD_PROFILE=${BOARD_PROFILE:-tuna-street}
 
 if [ ! -d "$WORK" ]; then
     git clone https://github.com/espressif/esp-brookesia.git "$WORK"
@@ -22,6 +26,14 @@ fi
 # Apply our overlay: V2 board, microfi_agent component, main.cpp wiring,
 # boot-screen resources.
 cp -rv overlay/. "$WORK/"
+
+# Patch the selected board profile on top of the generic overlay (#260):
+# desktop colour, splash, launcher geometry, staged apps, and the generated
+# board_profile.h / board_profile.cmake / sdkconfig.profile the code + build
+# read. Must run AFTER the overlay copy (it patches files the overlay just laid
+# down) and BEFORE set-target (which reads main/CMakeLists.txt).
+echo "Board profile: $BOARD_PROFILE"
+python3 apply_profile.py "$BOARD_PROFILE" --work "$WORK"
 
 SUPER="$WORK/examples/system/super"
 cd "$SUPER"
@@ -51,8 +63,13 @@ if ! grep -q '^CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_16m.csv"' sdkc
 fi
 
 # Config: board defaults are in place above; append agent + platform settings,
-# then local (gitignored) WiFi credentials.
+# then the per-board C2 override (apply_profile wrote sdkconfig.profile from the
+# profile's c2.baseUrl -- it comes AFTER sdkconfig.microfi so the board's
+# relay/direct URL wins), then local (gitignored) WiFi credentials.
 cat "$OLDPWD/sdkconfig.microfi" >> sdkconfig
+if [ -f sdkconfig.profile ]; then
+    cat sdkconfig.profile >> sdkconfig
+fi
 if [ -f "$OLDPWD/sdkconfig.local" ]; then
     cat "$OLDPWD/sdkconfig.local" >> sdkconfig
 else

@@ -15,6 +15,7 @@
 #include "freertos/task.h"
 #include "brookesia/service_helper/network/wifi.hpp"
 #include "microfi/agent.h"
+#include "board_profile.h"  // GENERATED per-board by apply_profile.py (#260)
 
 using namespace esp_brookesia;
 
@@ -72,11 +73,13 @@ extern "C" void app_main(void)
                 BROOKESIA_LOGW("WiFi pre-provision: no SSID configured, skipping");
             } else {
                 /* A previously saved AP on the wrong subnet wins the boot
-                 * reconnect race — evict it before asserting the LAN AP. */
+                 * reconnect race — evict it before asserting the LAN AP. Which
+                 * AP to evict is per-board (#260): tuna-street evicts STARLINK,
+                 * the StarlinkAI board evicts ATT. */
                 auto rm = WifiHelper::call_function_sync(
-                    WifiHelper::FunctionId::RemoveConnectedAp, "STARLINK");
-                BROOKESIA_LOGI("WiFi pre-provision: remove STARLINK -> %1%",
-                               rm ? "removed" : rm.error());
+                    WifiHelper::FunctionId::RemoveConnectedAp, BOARD_WIFI_EVICT_AP);
+                BROOKESIA_LOGI("WiFi pre-provision: remove '%1%' -> %2%",
+                               BOARD_WIFI_EVICT_AP, rm ? "removed" : rm.error());
                 auto set_ap = WifiHelper::call_function_sync(
                     WifiHelper::FunctionId::SetConnectAp,
                     CONFIG_MICROFI_WIFI_SSID, CONFIG_MICROFI_WIFI_PASSWORD);

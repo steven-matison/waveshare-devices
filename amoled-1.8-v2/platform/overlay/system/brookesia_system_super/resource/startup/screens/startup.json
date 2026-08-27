@@ -11,7 +11,7 @@
         "crossAlign": "center"
     },
     "style": {
-        "bgColor": "#F96702",
+        "bgColor": "#000000",
         "padding": 0
     },
     "children": [

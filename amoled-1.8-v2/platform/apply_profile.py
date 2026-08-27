@@ -18,28 +18,82 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+# Generic launcher-desktop background = upstream esp-brookesia's own default
+# token (shell.json shell.desktop.bgColor at the pinned upstream). A profile
+# with brand.desktopBg=null resets to this deterministically, so a board never
+# inherits a previous profile's colour from a reused work tree.
+DEFAULT_DESKTOP_BG = "${color.bg.base}"
+# Generic boot-splash frame colour = upstream startup.json's own default (black).
+DEFAULT_SPLASH_BG = "#000000"
+
 
 def die(msg):
     print(f"apply_profile: ERROR: {msg}", file=sys.stderr)
     sys.exit(1)
 
 
-def patch_shell_desktop_bg(work, color):
-    """resource/shell/styles/shell.json -> shell.desktop.bgColor."""
+def _sub_shell_style(t, block, key, value, path):
+    """Set "shell.<block>": { ... "<key>": "..." } to value and return the text.
+    Anchored on the unique "shell.<block>" key, a non-greedy .*? reaches that
+    block's own <key> (every field we patch is an immediate member, so the first
+    hit after the block key is the right one). We deliberately do NOT bound the
+    span with [^}]: a reset value can be a "${color.x.y}" token whose own "}"
+    would otherwise halt the scan before a later field in the same block. The
+    closing quote in the block pattern keeps "statusTiny" from matching
+    "statusTinyMuted"."""
+    pat = re.compile(
+        rf'("shell\.{re.escape(block)}"\s*:\s*\{{.*?"{re.escape(key)}"\s*:\s*)"[^"]*"',
+        re.S)
+    new, n = pat.subn(rf'\g<1>"{value}"', t)
+    if n != 1:
+        die(f"could not patch shell.{block}.{key} (matched {n} times) in {path}")
+    return new
+
+
+def patch_shell_styles(work, brand):
+    """resource/shell/styles/shell.json -> desktop background + the status-bar
+    palette (#260, reconciling #258's Cloudera look). brand.statusBar is a dict
+    of four semantic colours or null; a null/absent value (any field) resets to
+    the generic upstream token, so a board never inherits a previous profile's
+    colour from a reused work tree."""
     p = os.path.join(work, "system/brookesia_system_super/resource/shell/styles/shell.json")
     if not os.path.isfile(p):
         die(f"shell.json not found at {p}")
-    if color is None:
-        print("  desktopBg: null -> leaving upstream token default")
-        return
     t = open(p).read()
-    # replace the bgColor line inside the "shell.desktop" block only
-    pat = re.compile(r'("shell\.desktop"\s*:\s*\{[^}]*?"bgColor"\s*:\s*)"[^"]*"', re.S)
-    new, n = pat.subn(rf'\1"{color}"', t)
+    desktop = brand.get("desktopBg") or DEFAULT_DESKTOP_BG
+    t = _sub_shell_style(t, "desktop", "bgColor", desktop, p)
+    sb = brand.get("statusBar") or {}
+    bg     = sb.get("bgColor")        or "${color.surface.base}"
+    border = sb.get("borderColor")    or "${color.border.default}"
+    text   = sb.get("textColor")      or "${color.text.default}"
+    muted  = sb.get("mutedTextColor") or "${color.text.muted}"
+    # bgColor + border live on shell.statusBar; the strip's text splits across
+    # brand/tiny (primary) and title/tinyMuted (muted).
+    t = _sub_shell_style(t, "statusBar",       "bgColor",     bg,     p)
+    t = _sub_shell_style(t, "statusBar",       "borderColor", border, p)
+    t = _sub_shell_style(t, "statusBrand",     "textColor",   text,   p)
+    t = _sub_shell_style(t, "statusTiny",      "textColor",   text,   p)
+    t = _sub_shell_style(t, "statusTitle",     "textColor",   muted,  p)
+    t = _sub_shell_style(t, "statusTinyMuted", "textColor",   muted,  p)
+    open(p, "w").write(t)
+    print(f"  shell styles -> desktop {desktop}; statusBar bg {bg} text {text}/{muted}")
+
+
+def patch_startup_bg(work, color):
+    """resource/startup/screens/startup.json -> style.bgColor (the frame colour
+    behind the boot splash image). Generic default is black; Cloudera fills the
+    frame with brand orange."""
+    p = os.path.join(work, "system/brookesia_system_super/resource/startup/screens/startup.json")
+    if not os.path.isfile(p):
+        die(f"startup.json not found at {p}")
+    color = color or DEFAULT_SPLASH_BG
+    t = open(p).read()
+    pat = re.compile(r'("style"\s*:\s*\{[^}]*?"bgColor"\s*:\s*)"[^"]*"', re.S)
+    new, n = pat.subn(rf'\g<1>"{color}"', t)
     if n != 1:
-        die(f"could not patch shell.desktop.bgColor (matched {n} times) in {p}")
+        die(f"could not patch startup style.bgColor (matched {n} times) in {p}")
     open(p, "w").write(new)
-    print(f"  shell.desktop.bgColor -> {color}")
+    print(f"  startup.bgColor -> {color}")
 
 
 def patch_launcher(work, launcher):
@@ -102,22 +156,63 @@ def copy_splash(work, prof_dir, splash):
 
 
 def write_header(work, prof):
-    """Generated main/board_profile.h consumed by main.cpp + shell_app_launcher.cpp."""
+    """Generated main/board_profile.h -- string macros consumed by main.cpp,
+    which sits in the same dir so a plain #include resolves. BOARD_HIDE_FILES is
+    deliberately NOT here: the launcher that reads it lives in the
+    brookesia_system_super component, which has no include path back to main/,
+    so it travels as a build-wide compile definition (write_launcher_cmake). C2
+    is not here either -- the agent reads it as Kconfig (write_c2_sdkconfig)."""
     p = os.path.join(work, "examples/system/super/main/board_profile.h")
-    hide = 1 if prof.get("launcher", {}).get("hideFiles") else 0
     evict = prof.get("wifi", {}).get("evictAp", "")
-    c2 = prof.get("c2", {}).get("baseUrl", "")
     body = (
         "// GENERATED by apply_profile.py -- do not edit. Board profile: "
         f"{prof['name']}\n"
         "#pragma once\n"
         f"#define BOARD_PROFILE_NAME \"{prof['name']}\"\n"
-        f"#define BOARD_HIDE_FILES {hide}\n"
         f"#define BOARD_WIFI_EVICT_AP \"{evict}\"\n"
-        f"#define BOARD_C2_BASE_URL \"{c2}\"\n"
     )
     open(p, "w").write(body)
-    print(f"  board_profile.h -> HIDE_FILES={hide} EVICT_AP='{evict}' C2='{c2}'")
+    print(f"  board_profile.h -> PROFILE={prof['name']} EVICT_AP='{evict}'")
+
+
+def write_launcher_cmake(work, prof):
+    """Generated main/board_profile.cmake -> BOARD_HIDE_FILES as a GLOBAL compile
+    definition. shell_app_launcher.cpp lives in the brookesia_system_super
+    component with no include path back to main/, so a header cannot reach it; a
+    build-wide compile definition does. Included (OPTIONAL) by
+    examples/system/super/CMakeLists.txt. Always writes a definite 0/1 so the
+    launcher's #if is deterministic."""
+    p = os.path.join(work, "examples/system/super/main/board_profile.cmake")
+    hide = 1 if prof.get("launcher", {}).get("hideFiles") else 0
+    body = (
+        f"# GENERATED by apply_profile.py -- do not edit. Board profile: {prof['name']}\n"
+        f"idf_build_set_property(COMPILE_DEFINITIONS \"BOARD_HIDE_FILES={hide}\" APPEND)\n"
+    )
+    open(p, "w").write(body)
+    print(f"  board_profile.cmake -> BOARD_HIDE_FILES={hide}")
+
+
+def write_c2_sdkconfig(work, prof):
+    """Generated examples/system/super/sdkconfig.profile -> per-board C2 URLs as
+    Kconfig overrides. The MicroFi agent reads CONFIG_MICROFI_C2_*_URL (Kconfig),
+    not a macro, so C2 must ride in sdkconfig. setup.sh cats this AFTER
+    sdkconfig.microfi, so these win; sdkconfig.microfi keeps the generic
+    (tuna-street) default as a fallback. A profile with no c2.baseUrl clears any
+    stale file so it can't leak from a previous profile on a reused work tree."""
+    base = prof.get("c2", {}).get("baseUrl", "").rstrip("/")
+    p = os.path.join(work, "examples/system/super/sdkconfig.profile")
+    if not base:
+        if os.path.isfile(p):
+            os.remove(p)
+        print("  sdkconfig.profile -> (no c2.baseUrl; none written)")
+        return
+    body = (
+        f"# GENERATED by apply_profile.py -- do not edit. Board profile: {prof['name']}\n"
+        f"CONFIG_MICROFI_C2_HEARTBEAT_URL=\"{base}/efm/api/c2-protocol/heartbeat\"\n"
+        f"CONFIG_MICROFI_C2_ACK_URL=\"{base}/efm/api/c2-protocol/acknowledge\"\n"
+    )
+    open(p, "w").write(body)
+    print(f"  sdkconfig.profile -> C2 base {base}")
 
 
 def main():
@@ -137,11 +232,14 @@ def main():
         die(f"work tree not found: {work}")
 
     print(f"apply_profile: '{prof['name']}' -> {work}")
-    patch_shell_desktop_bg(work, prof.get("brand", {}).get("desktopBg"))
+    patch_shell_styles(work, prof.get("brand", {}))
+    patch_startup_bg(work, prof.get("brand", {}).get("splashBg"))
     copy_splash(work, prof_dir, prof.get("splash", "background.png"))
     patch_launcher(work, prof.get("launcher", {}))
     patch_apps(work, prof.get("apps", []))
     write_header(work, prof)
+    write_launcher_cmake(work, prof)
+    write_c2_sdkconfig(work, prof)
     print("apply_profile: done")
 
 

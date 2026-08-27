@@ -254,12 +254,16 @@ std::expected<void, std::string> ShellApp::populate_launcher(core::AppContext &c
         if (!app.manifest.visible) {
             continue;
         }
-        // Cloudera board (#258): keep the launcher a clean 2x2 (4 tiles). Hide the
-        // stock Files tile so App Store + Settings + Agent + RACING fill one 2x2
-        // page. (Files stays installed; it just claims no home slot.)
+        // Per-board (#260): boards that run a clean 2x2 (cloudera, tuna-starlink)
+        // hide the stock Files tile so their four tiles fill one non-scrolling
+        // page. Gated by BOARD_HIDE_FILES, a compile definition from the board
+        // profile (undefined -> shown, the generic tuna-street default). Files
+        // stays installed either way; it just claims no home slot when hidden.
+#if defined(BOARD_HIDE_FILES) && BOARD_HIDE_FILES
         if (app.manifest.id == "brookesia.general.files") {
             continue;
         }
+#endif
         visible_apps.push_back(app);
         launcher_order_.push_back(app.app_id);
     }
@@ -435,12 +439,16 @@ std::expected<void, std::string> ShellApp::refresh_environment()
         if (!app.manifest.visible) {
             continue;
         }
-        // Cloudera board (#258): keep the launcher a clean 2x2 (4 tiles). Hide the
-        // stock Files tile so App Store + Settings + Agent + RACING fill one 2x2
-        // page. (Files stays installed; it just claims no home slot.)
+        // Per-board (#260): boards that run a clean 2x2 (cloudera, tuna-starlink)
+        // hide the stock Files tile so their four tiles fill one non-scrolling
+        // page. Gated by BOARD_HIDE_FILES, a compile definition from the board
+        // profile (undefined -> shown, the generic tuna-street default). Files
+        // stays installed either way; it just claims no home slot when hidden.
+#if defined(BOARD_HIDE_FILES) && BOARD_HIDE_FILES
         if (app.manifest.id == "brookesia.general.files") {
             continue;
         }
+#endif
 
         const auto instance_path = std::string(SUPER_LAUNCHER_PATH_PREFIX) + std::to_string(app.app_id);
         const auto label_path = instance_path + "/" + SUPER_LAUNCHER_LABEL_ID;

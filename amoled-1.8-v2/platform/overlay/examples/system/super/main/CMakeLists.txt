@@ -33,9 +33,14 @@ if(NOT DEFINED TUNASTREET_APPS_DIR OR "${TUNASTREET_APPS_DIR}" STREQUAL "")
 endif()
 get_filename_component(TUNASTREET_APPS_DIR "${TUNASTREET_APPS_DIR}" ABSOLUTE)
 
+# Generic default = tuna-street's four apps. apply_profile.py (#260) rewrites
+# this list per-board from profiles/<name>/profile.json (e.g. cloudera stages
+# only agent + racing) -- do not hardcode a single board's app set here.
 set(TUNASTREET_APP_PACKAGES
     tunastreet.agent
     tunastreet.racing
+    tunastreet.tminus
+    tunastreet.xviewer
 )
 
 idf_build_get_property(build_components BUILD_COMPONENTS)
