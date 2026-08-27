@@ -32,5 +32,6 @@
   },
   "c2": {
     "baseUrl": "http://192.168.1.121:10090"
-  }
+  },
+  "hasBattery": true
 }

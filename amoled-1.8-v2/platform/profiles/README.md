@@ -20,6 +20,7 @@ BOARD_PROFILE=cloudera ./setup.sh      # (default: tuna-street)
 | `splash` | `resource/startup/images/background.png` (the file named here, from this profile dir; absent → the overlay's generic tuna splash is kept) |
 | `launcher.*` | `resource/shell/constants/portrait.json` → the `launcher*` grid constants |
 | `launcher.hideFiles` | generated `main/board_profile.cmake` → `BOARD_HIDE_FILES` **compile definition** (read by `shell_app_launcher.cpp`, which lives in another component and can't include `main/` — so it rides as a build-wide define, not a header macro) |
+| `hasBattery` | generated `main/board_profile.cmake` → `BOARD_HAS_BATTERY` **compile definition** (#261): boards with a LiPo fitted read the AXP2101 and show the status-bar charge gauge; a USB-only board compiles it out |
 | `apps` | `main/CMakeLists.txt` → `TUNASTREET_APP_PACKAGES` (which runtime tiles get staged) |
 | `wifi.evictAp` | generated `main/board_profile.h` → `BOARD_WIFI_EVICT_AP` (read by `main.cpp`, same dir); the SSID to join stays in gitignored `sdkconfig.local` |
 | `c2.baseUrl` | generated `examples/system/super/sdkconfig.profile` → `CONFIG_MICROFI_C2_HEARTBEAT_URL` / `_ACK_URL`; `setup.sh` cats it **after** `sdkconfig.microfi` so the board's URL wins. The agent reads these as Kconfig, not a macro |
