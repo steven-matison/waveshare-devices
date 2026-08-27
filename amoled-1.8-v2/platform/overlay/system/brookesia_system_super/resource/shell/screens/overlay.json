@@ -91,7 +91,7 @@
                     },
                     "placement": {
                         "mode": "flow",
-                        "width": "wrap",
+                        "width": "${constant.ui.overlay.metric.statusPillWidth}",
                         "height": "${constant.ui.overlay.metric.statusPillHeight}"
                     },
                     "children": [
