@@ -39,7 +39,7 @@ Everything else arrives without reflashing:
 | `platform/setup.sh` | Clone upstream at `PINNED_UPSTREAM`, apply overlay, select board, stage the `tunastreet.*` app packages, build |
 | `platform/sdkconfig.microfi` | Agent + platform config (WiFi creds live in gitignored `sdkconfig.local`) |
 | `bringup/amoled-colorbar/` | Minimal display bring-up: `esp_lcd_co5300` + `draw_bitmap` only. **Flash this first on a new board** — solid color on the glass before any LVGL/launcher work |
-| `apps/tunastreet.*/` | The runtime app packages — developed here, published as their own repos (below) |
+| `apps/tunastreet.*/` | `tunastreet.hello` is the in-repo starter template; the shipped apps are developed in their own leader repos (below), not here |
 | `uikit/` | **panelkit** — generates every app screen from `tokens.json` so an illegal size, layout or tap contract fails at generation time, not on the glass; `lint.py` is the pre-flash gate |
 | `tools/simulator/` | Runs an app's real `app.js` + screen off-device at true 368×448 — headless for scoring, in a browser for watching; `lint.js --check` before every flash |
 | `tools/` | Windows-side flash + serial: `bootlog.py` (reset + capture), `readlog.py` (attach without reset), `stage_apps.py`, `lint_shell.py` (the kit's rules over the shell resources) |

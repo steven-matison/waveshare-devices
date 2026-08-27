@@ -1,6 +1,0 @@
-{
-    "type": "screenFlow",
-    "id": "main",
-    "screens": ["home"],
-    "initial": "home"
-}
