@@ -34,10 +34,13 @@ using WifiHelper = service::helper::Wifi;
 #if defined(BOARD_HAS_BATTERY) && BOARD_HAS_BATTERY
 using DeviceHelper = service::helper::Device;
 
-// Local to this TU so the shared system_constants.hpp stays untouched; same
-// parent path as SUPER_STATUS_WIFI_PATH, just the sibling battery pill.
-constexpr const char *SUPER_STATUS_BATTERY_PATH =
-    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS "/status_right/battery_pill";
+// Local to this TU so the shared system_constants.hpp stays untouched. Built
+// from the exported SUPER_STATUS_BAR_PATH constant (the "/status" base) rather
+// than the BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS macro, which that header
+// only uses internally and does not leave in scope. Same parent as
+// SUPER_STATUS_WIFI_PATH, just the sibling battery pill.
+const std::string SUPER_STATUS_BATTERY_PATH =
+    std::string(SUPER_STATUS_BAR_PATH) + "/status_right/battery_pill";
 #endif
 
 struct WifiStatusState {
