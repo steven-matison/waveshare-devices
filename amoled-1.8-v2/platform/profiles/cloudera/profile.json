@@ -1,6 +1,6 @@
 {
   "name": "cloudera",
-  "description": "Cloudera-branded board (#258, COM10, microfi-2884858d582c). Orange desktop, cloud splash, Agent + RACING in a 2x2, ATT LAN + direct EFM C2.",
+  "description": "Cloudera-branded board (#258, COM10, microfi-2884858d582c). Orange desktop, cloud splash, RACING in a 2x2, ATT LAN. Battery board -> deployed WITHOUT the EFM agent (#263).",
   "brand": {
     "accent": "#F96702",
     "desktopBg": "#F96702",
@@ -24,7 +24,6 @@
     "hideFiles": true
   },
   "apps": [
-    "tunastreet.agent",
     "tunastreet.racing"
   ],
   "wifi": {
@@ -33,5 +32,6 @@
   "c2": {
     "baseUrl": "http://192.168.1.121:10090"
   },
-  "hasBattery": true
+  "hasBattery": true,
+  "hasAgent": false
 }

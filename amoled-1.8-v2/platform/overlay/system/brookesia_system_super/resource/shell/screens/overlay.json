@@ -77,17 +77,21 @@
             "children": [
                 {
                     "type": "container",
-                    "id": "status_right",
+                    "id": "status_left",
+                    "commonProps": {
+                        "clickable": false,
+                        "scrollable": false
+                    },
                     "layout": {
                         "type": "flex",
                         "flexFlow": "row",
-                        "mainAlign": "end",
+                        "mainAlign": "start",
                         "crossAlign": "center",
                         "gap": "${constant.ui.overlay.metric.statusItemGap}"
                     },
                     "placement": {
                         "mode": "flow",
-                        "width": "match",
+                        "width": "wrap",
                         "height": "${constant.ui.overlay.metric.statusPillHeight}"
                     },
                     "children": [
@@ -136,7 +140,25 @@
                             "styleRefs": [
                                 "shell.statusPill"
                             ]
-                        },
+                        }
+                    ]
+                },
+                {
+                    "type": "container",
+                    "id": "status_right",
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "row",
+                        "mainAlign": "end",
+                        "crossAlign": "center",
+                        "gap": "${constant.ui.overlay.metric.statusItemGap}"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "wrap",
+                        "height": "${constant.ui.overlay.metric.statusPillHeight}"
+                    },
+                    "children": [
                         {
                             "type": "container",
                             "id": "wifi_pill",

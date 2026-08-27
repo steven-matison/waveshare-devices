@@ -7,6 +7,25 @@
 # System::init) installs everything in that registry -- same path the
 # stock Settings/Files apps take. No explicit install call in main.cpp.
 
+# Per-board option (#263): with BOARD_HAS_AGENT=0 (from main/board_profile.cmake,
+# in scope because the project CMakeLists includes it before project()) there is
+# no agent to report on, so no tile is registered -- a stub object, no -u flag.
+# REQUIRES stays identical to the real branch (IDF's script-mode requirements
+# pass cannot see the variable and must reach the same answer).
+if(DEFINED BOARD_HAS_AGENT AND NOT BOARD_HAS_AGENT)
+    message(STATUS "agent_status_tile: disabled by board profile (hasAgent=false) -- building stub")
+    idf_component_register(
+        SRCS "tile_stub.cpp"
+        REQUIRES
+            brookesia_system_core
+            microfi_agent
+            esp_wifi
+            esp_netif
+            freertos
+    )
+    return()
+endif()
+
 idf_component_register(
     SRCS "agent_status_tile.cpp"
     REQUIRES

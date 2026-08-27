@@ -76,12 +76,20 @@ else
     echo "WARNING: no sdkconfig.local (WiFi creds) — device will not join a network" >&2
 fi
 
-# Runtime apps: the four tunastreet.* packages are staged into the build's
-# littlefs tree by main/CMakeLists.txt (see the #216 block there), reading them
-# straight out of this repo -- no separate staging tree to drift. -D puts the
-# path in the CMake cache, so a later bare `idf.py build` still finds them.
-APPS_DIR=$(cd "$OLDPWD/../apps" && pwd)
-idf.py -DTUNASTREET_APPS_DIR="$APPS_DIR" build
+# Runtime apps: the profile's packages are staged into the build's littlefs
+# tree by main/CMakeLists.txt (see the #216 block there), read straight from
+# their source trees -- no separate staging tree to drift. -D puts the roots in
+# the CMake cache, so a later bare `idf.py build` still finds them.
+#
+# The tunastreet.* apps live in their per-app LEADER repos (TunaStreetTest/
+# amoled-<app>, app + backend together, 2026-08-27), cloned as ~/amoled-<app>;
+# this repo's apps/ keeps only tunastreet.hello and the tunastarlink.* copies.
+# So the app-root list is this repo's apps/ plus the leader clones, searched in
+# order per package. Override with AMOLED_APP_ROOTS (';'-separated) on a host
+# whose clones live elsewhere.
+REPO_APPS_DIR=$(cd "$OLDPWD/../apps" && pwd)
+APP_ROOTS=${AMOLED_APP_ROOTS:-"$REPO_APPS_DIR;$HOME/amoled-agent/apps;$HOME/amoled-racing/apps;$HOME/amoled-tminus/apps;$HOME/amoled-x-viewer/apps"}
+idf.py -DTUNASTREET_APPS_DIR="$APP_ROOTS" -DTUNASTREET_SOUNDS_DIR="$REPO_APPS_DIR/../sounds" build
 
 echo
 echo "Runtime apps in the generated image:"

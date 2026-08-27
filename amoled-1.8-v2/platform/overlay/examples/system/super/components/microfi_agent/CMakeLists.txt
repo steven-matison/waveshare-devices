@@ -39,6 +39,47 @@ set(MICROFI_CJSON_SRCS
   "${MICROFI_ROOT}/vendor/cjson/cJSON_Utils.cpp"
 )
 
+# Per-board option (#263): BOARD_HAS_AGENT comes from main/board_profile.cmake,
+# included by the project CMakeLists BEFORE project() so it is in scope here.
+# Undefined (no profile applied) means the generic default -- agent ON. With it
+# 0 the component registers a single stub object and none of the MicroFi
+# sources: no flow engine, no C2 client, no processors, no PSRAM BSS. The
+# REQUIRES list is identical in both branches on purpose -- IDF scrapes it in a
+# separate script-mode pass where this variable is not visible, and the two
+# passes must agree. The Kconfig.projbuild is still sourced either way, which
+# is what keeps CONFIG_MICROFI_WIFI_SSID/PASSWORD available to main.cpp.
+if(DEFINED BOARD_HAS_AGENT AND NOT BOARD_HAS_AGENT)
+  message(STATUS "microfi_agent: disabled by board profile (hasAgent=false) -- building stub")
+  idf_component_register(
+    SRCS "agent_stub.cpp"
+    REQUIRES
+      esp_wifi
+      esp_event
+      esp_netif
+      nvs_flash
+      esp_http_client
+      mqtt
+      mbedtls
+      esp-tls
+      freertos
+      log
+      littlefs
+      driver
+      esp_driver_gpio
+      esp_driver_tsens
+      esp_driver_i2c
+      esp_http_server
+      sparkplug
+      esp_board_manager
+      brookesia_service_display
+      brookesia_service_audio
+      brookesia_service_helper
+      brookesia_service_manager
+      brookesia_hal_interface
+  )
+  return()
+endif()
+
 idf_component_register(
   SRCS
     "${MICROFI_ROOT}/src/flowfile.cpp"

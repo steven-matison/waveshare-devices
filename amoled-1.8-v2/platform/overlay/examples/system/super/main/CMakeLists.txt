@@ -24,14 +24,30 @@ idf_component_register(
 # TUNASTREET_APPS_DIR is set by platform/setup.sh (-D, so it persists in the
 # cache for later bare `idf.py build`s); the HOME fallback covers a manual
 # build in the usual checkout location.
+#
+# It is a CMake LIST of app roots (';'-separated), searched in order for each
+# package id. Since 2026-08-27 the tunastreet.* apps live in their per-app
+# leader repos (TunaStreetTest/amoled-<app>, cloned as ~/amoled-<app>/apps/),
+# not in waveshare-devices/amoled-1.8-v2/apps/ (which keeps only the
+# tunastreet.hello template and the tunastarlink.* copies) -- so one root is no
+# longer enough. setup.sh passes the repo apps dir plus the four leader clones.
 if(NOT DEFINED TUNASTREET_APPS_DIR OR "${TUNASTREET_APPS_DIR}" STREQUAL "")
     if(DEFINED ENV{TUNASTREET_APPS_DIR})
         set(TUNASTREET_APPS_DIR "$ENV{TUNASTREET_APPS_DIR}")
     else()
-        set(TUNASTREET_APPS_DIR "$ENV{HOME}/waveshare-devices/amoled-1.8-v2/apps")
+        set(TUNASTREET_APPS_DIR
+            "$ENV{HOME}/waveshare-devices/amoled-1.8-v2/apps"
+            "$ENV{HOME}/amoled-agent/apps"
+            "$ENV{HOME}/amoled-racing/apps"
+            "$ENV{HOME}/amoled-tminus/apps"
+            "$ENV{HOME}/amoled-x-viewer/apps")
     endif()
 endif()
-get_filename_component(TUNASTREET_APPS_DIR "${TUNASTREET_APPS_DIR}" ABSOLUTE)
+set(tunastreet_app_roots "")
+foreach(tunastreet_root IN LISTS TUNASTREET_APPS_DIR)
+    get_filename_component(tunastreet_root "${tunastreet_root}" ABSOLUTE)
+    list(APPEND tunastreet_app_roots "${tunastreet_root}")
+endforeach()
 
 # Generic default = tuna-street's four apps. apply_profile.py (#260) rewrites
 # this list per-board from profiles/<name>/profile.json (e.g. cloudera stages
@@ -53,15 +69,23 @@ include("${tunastreet_system_core_dir}/cmake/runtime_app_stage.cmake")
 brookesia_system_core_get_esp_runtime_app_stage_root(tunastreet_stage_root)
 
 foreach(tunastreet_pkg IN LISTS TUNASTREET_APP_PACKAGES)
-    set(tunastreet_pkg_dir "${TUNASTREET_APPS_DIR}/${tunastreet_pkg}")
+    set(tunastreet_pkg_dir "")
+    foreach(tunastreet_root IN LISTS tunastreet_app_roots)
+        if(EXISTS "${tunastreet_root}/${tunastreet_pkg}/manifest.json")
+            set(tunastreet_pkg_dir "${tunastreet_root}/${tunastreet_pkg}")
+            break()
+        endif()
+    endforeach()
     # Fail the configure rather than quietly shipping an image that is missing
     # an app: a launcher with a tile gone is the symptom this issue is about.
-    if(NOT EXISTS "${tunastreet_pkg_dir}/manifest.json")
+    if("${tunastreet_pkg_dir}" STREQUAL "")
         message(FATAL_ERROR
-            "Runtime app package '${tunastreet_pkg}' not found at ${tunastreet_pkg_dir} "
-            "(no manifest.json). Point TUNASTREET_APPS_DIR at "
-            "waveshare-devices/amoled-1.8-v2/apps -- see platform/setup.sh.")
+            "Runtime app package '${tunastreet_pkg}' not found (no manifest.json) in any "
+            "app root: ${tunastreet_app_roots}. Point TUNASTREET_APPS_DIR at the roots that "
+            "hold it (the per-app leader clones ~/amoled-<app>/apps and/or "
+            "waveshare-devices/amoled-1.8-v2/apps) -- see platform/setup.sh.")
     endif()
+    message(STATUS "Tuna Street app ${tunastreet_pkg} <- ${tunastreet_pkg_dir}")
     brookesia_stage_runtime_app_package(
         PACKAGE_ID "${tunastreet_pkg}"
         SOURCE_DIR "${tunastreet_pkg_dir}"
@@ -69,7 +93,7 @@ foreach(tunastreet_pkg IN LISTS TUNASTREET_APP_PACKAGES)
         NO_INDEX
     )
 endforeach()
-message(STATUS "Tuna Street apps staged from ${TUNASTREET_APPS_DIR}: ${TUNASTREET_APP_PACKAGES}")
+message(STATUS "Tuna Street apps staged: ${TUNASTREET_APP_PACKAGES}")
 # -----------------------------------------------------------------------------
 
 # --- Tuna Street sound clips (#191 PlayAudio) --------------------------------
@@ -79,7 +103,9 @@ message(STATUS "Tuna Street apps staged from ${TUNASTREET_APPS_DIR}: ${TUNASTREE
 # a sibling of apps/ and system/, so the partition image carries them. Unlike
 # the apps stage root, nothing wipes this directory between configures.
 if(NOT DEFINED TUNASTREET_SOUNDS_DIR OR "${TUNASTREET_SOUNDS_DIR}" STREQUAL "")
-    set(TUNASTREET_SOUNDS_DIR "${TUNASTREET_APPS_DIR}/../sounds")
+    # The clips live in waveshare-devices next to its apps/ -- the first root.
+    list(GET tunastreet_app_roots 0 tunastreet_first_root)
+    set(TUNASTREET_SOUNDS_DIR "${tunastreet_first_root}/../sounds")
 endif()
 get_filename_component(TUNASTREET_SOUNDS_DIR "${TUNASTREET_SOUNDS_DIR}" ABSOLUTE)
 if(IS_DIRECTORY "${TUNASTREET_SOUNDS_DIR}")

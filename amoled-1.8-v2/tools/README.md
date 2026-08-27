@@ -29,6 +29,15 @@ enumerates as `COM6`. Re-identify by MAC `1c:db:d4:7b:85:84` after a replug:
 `python -m serial.tools.list_ports -v` (reads SER= without resetting;
 `esptool flash-id` DOES reset).
 
+**If `bootlog.py` returns 0 bytes** (the Cloudera board on COM10 did this
+right after a full flash — the RTS pulse never reset it), let esptool do the
+reset and hold the port open straight after it:
+`python -m esptool --chip esp32s3 --port COMn --after hard-reset read-mac && python readlog.py COMn 100`.
+You lose the first ~0.5 s of ROM output and get everything after. Also make
+sure the `C:\temp\amoled-super` copy of `bootlog.py` is *this* one — an older
+copy there hardcoded COM8 and silently ignored the port argument, so a
+"COM10" capture reset the COM8 board instead.
+
 ## Flash recipes
 
 Build in WSL (`examples/system/super`), copy segments to
@@ -45,20 +54,27 @@ python -m esptool --chip esp32s3 --port COM8 -b 460800 write-flash 0xaa1000 litt
 ```
 
 Offsets come from `partitions_16m.csv` (littlefs_data = 5000K @ `0xaa1000`).
-Ask before every flash — the board hard-resets after and the EFM agent drops
-for ~15 s.
+The board hard-resets after a flash and the EFM agent (where there is one)
+drops for ~15 s.
 
 **Anything not in `examples/system/super/littlefs/apps/` vanishes on a storage
 flash**, and that tree is rebuilt by the build itself. `platform/setup.sh`
-stages all four `tunastreet.*` packages straight out of `../apps/` through
-upstream's `brookesia_stage_runtime_app_package` hook (#216), so a clean build
-produces a complete image. Do **not** hand-copy an app into that tree instead:
-the upstream hook wipes the whole apps stage root once per CMake configure and
-then re-copies only the registered packages, so a hand-placed app survives
-exactly until the next configure and then silently disappears — which is how
-the board once ended up running a build older than the repo. To add a fifth
-app, add its id to `TUNASTREET_APP_PACKAGES` in
-`platform/overlay/examples/system/super/main/CMakeLists.txt`.
+stages the selected profile's packages through upstream's
+`brookesia_stage_runtime_app_package` hook (#216), so a clean build produces a
+complete image. The `tunastreet.*` packages are read from their per-app
+**leader** clones (`~/amoled-{agent,racing,tminus,x-viewer}/apps/`, one repo
+per app with its backend, 2026-08-27); this repo's `apps/` holds only
+`tunastreet.hello` and the `tunastarlink.*` copies. Do **not** hand-copy an
+app into the littlefs tree instead: the upstream hook wipes the whole apps
+stage root once per CMake configure and then re-copies only the registered
+packages, so a hand-placed app survives exactly until the next configure and
+then silently disappears — which is how the board once ended up running a
+build older than the repo. Which apps a board gets is the `apps` list in its
+`platform/profiles/<name>/profile.json`.
+
+Boards on WindowsDesktop today: **COM8** = Tuna Street (`1C:DB:D4:7B:85:84`,
+USB-only, agent ON), **COM10** = Cloudera (`28:84:85:8D:58:2C`, battery, no
+agent). Both are Claude's to flash without asking.
 
 Recovery image: `ESP32-S3-Touch-AMOLED-1.8-V2-FactoryXiaozhi_260601.bin`
 (16 MB whole-flash write at `0x0`).

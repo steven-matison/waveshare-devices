@@ -58,6 +58,14 @@ CONFIG_BROOKESIA_HAL_ADAPTOR_DISPLAY_ENABLE_LEDC_BACKLIGHT_IMPL=n
 CONFIG_BROOKESIA_HAL_ADAPTOR_DISPLAY_ENABLE_LCD_PANEL_IMPL=y
 CONFIG_BROOKESIA_HAL_ADAPTOR_DISPLAY_LCD_PANEL_H_RES=368
 CONFIG_BROOKESIA_HAL_ADAPTOR_DISPLAY_LCD_PANEL_V_RES=448
+# The CO5300 needs 2-pixel-aligned partial-flush windows (#262). The V1 board
+# this port was cloned from (SH8601) never set these, so LVGL flushed odd-x
+# label repaints and the panel shifted the pixel stream -- the "scrambled"
+# clock / agent text that only ever hit runtime-updated labels, never a
+# full-screen draw (which starts at x=0). Upstream's own CO5300 boards
+# (esp32_s3_touch_amoled_1_75c / _2_16) set exactly these two.
+CONFIG_BROOKESIA_HAL_ADAPTOR_DISPLAY_LCD_PANEL_DRAW_X_ALIGN_BYTES=2
+CONFIG_BROOKESIA_HAL_ADAPTOR_DISPLAY_LCD_PANEL_DRAW_Y_ALIGN_BYTES=2
 # Display:LcdTouch
 CONFIG_BROOKESIA_HAL_ADAPTOR_DISPLAY_ENABLE_LCD_TOUCH_IMPL=y
 # Storage

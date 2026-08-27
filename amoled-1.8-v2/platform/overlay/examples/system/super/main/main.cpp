@@ -14,8 +14,18 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "brookesia/service_helper/network/wifi.hpp"
-#include "microfi/agent.h"
 #include "board_profile.h"  // GENERATED per-board by apply_profile.py (#260)
+
+// The MicroFi EFM agent is a per-board option (#263): BOARD_HAS_AGENT is a
+// build-wide compile definition from the profile (see CMakeLists.txt); absent
+// means the generic default, agent ON. With it 0 the microfi_agent component
+// is an empty stub, so the header is not even included here.
+#if !defined(BOARD_HAS_AGENT) || BOARD_HAS_AGENT
+#define MAIN_HAS_AGENT 1
+#include "microfi/agent.h"
+#else
+#define MAIN_HAS_AGENT 0
+#endif
 
 using namespace esp_brookesia;
 
@@ -107,11 +117,18 @@ extern "C" void app_main(void)
          * explicit install call here. */
 
         /* MicroFi EFM agent (#188 Phase 4): own task so its WiFi-adopt wait
-         * never blocks Brookesia setup. Agent tasks outlive this launcher. */
+         * never blocks Brookesia setup. Agent tasks outlive this launcher.
+         * Per-board option (#263): a profile with hasAgent=false builds no
+         * agent and never starts one -- the board is a plain Brookesia panel. */
+#if MAIN_HAS_AGENT
         xTaskCreate([](void*) {
             microfi_agent_start();
             vTaskDelete(nullptr);
         }, "microfi", 8 * 1024, nullptr, 5, nullptr);
+#else
+        BROOKESIA_LOGI("MicroFi EFM agent: disabled by board profile '%1%' (hasAgent=false)",
+                       BOARD_PROFILE_NAME);
+#endif
 
         boost::this_thread::sleep_for(boost::chrono::seconds(10));
 

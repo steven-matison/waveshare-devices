@@ -37,10 +37,12 @@ using DeviceHelper = service::helper::Device;
 // Local to this TU so the shared system_constants.hpp stays untouched. Built
 // from the exported SUPER_STATUS_BAR_PATH constant (the "/status" base) rather
 // than the BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS macro, which that header
-// only uses internally and does not leave in scope. Same parent as
-// SUPER_STATUS_WIFI_PATH, just the sibling battery pill.
+// only uses internally and does not leave in scope. The pill sits in its own
+// status_left group at the LEFT edge of the bar (Steven, 2026-08-27), opposite
+// the WiFi pill + clock in status_right -- overlay.json's "status" container is
+// a spaceBetween row, so the two groups pin to the two edges.
 const std::string SUPER_STATUS_BATTERY_PATH =
-    std::string(SUPER_STATUS_BAR_PATH) + "/status_right/battery_pill";
+    std::string(SUPER_STATUS_BAR_PATH) + "/status_left/battery_pill";
 #endif
 
 struct WifiStatusState {
