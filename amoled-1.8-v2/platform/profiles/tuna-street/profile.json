@@ -1,20 +1,20 @@
 {
   "name": "tuna-street",
-  "description": "The original board (WindowsDesktop / COM8, microfi-1cdbd47b8584). 3-col launcher with all four apps, ATT LAN + direct EFM C2, tuna splash. This is the default profile.",
+  "description": "The original board (WindowsDesktop / COM8, microfi-1cdbd47b8584). 2x2 paged launcher (swipe sideways) with all four apps, ATT LAN + direct EFM C2, tuna splash. This is the default profile.",
   "brand": {
     "accent": "#4A90D9",
     "desktopBg": null
   },
   "splash": "background.png",
   "launcher": {
-    "columns": 3,
-    "gridWidth": "356dp",
-    "itemWidth": "108dp",
-    "itemHeight": "112dp",
-    "itemGap": "16dp",
-    "iconTileSize": "86dp",
-    "iconSize": "86dp",
-    "hideFiles": false
+    "columns": 2,
+    "gridWidth": "332dp",
+    "itemWidth": "156dp",
+    "itemHeight": "146dp",
+    "itemGap": "20dp",
+    "iconTileSize": "120dp",
+    "iconSize": "120dp",
+    "hideFiles": true
   },
   "apps": [
     "tunastreet.agent",

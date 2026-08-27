@@ -97,6 +97,134 @@
                     "children": [
                         {
                             "type": "container",
+                            "id": "wifi_pill",
+                            "commonProps": {
+                                "hidden": true
+                            },
+                            "bindings": {
+                                "commonProps.hidden": "wifi_hidden",
+                                "style.bgColor": "wifi_bg"
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "mainAlign": "center",
+                                "crossAlign": "center"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "${constant.ui.overlay.metric.statusPillWidth}",
+                                "height": "${constant.ui.overlay.metric.statusPillHeight}"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "label",
+                                    "bindings": {
+                                        "labelProps.text": "labelProps.text",
+                                        "style.textColor": "wifi_text"
+                                    },
+                                    "labelProps": {
+                                        "text": "${constant.i18n.overlay.wifi}"
+                                    },
+                                    "style": {
+                                        "fontSize": "${constant.ui.overlay.metric.statusPillFont}"
+                                    },
+                                    "placement": {
+                                        "mode": "flow"
+                                    },
+                                    "styleRefs": [
+                                        "shell.pillText"
+                                    ]
+                                }
+                            ],
+                            "styleRefs": [
+                                "shell.statusPill"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "container",
+                    "id": "status_center",
+                    "commonProps": {
+                        "clickable": false,
+                        "scrollable": false
+                    },
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "row",
+                        "mainAlign": "center",
+                        "crossAlign": "center",
+                        "gap": "${constant.ui.overlay.metric.statusItemGap}"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "${constant.ui.overlay.metric.statusClockWidth}",
+                        "height": "${constant.ui.overlay.metric.statusPillHeight}"
+                    },
+                    "children": [
+                        {
+                            "type": "container",
+                            "id": "clock",
+                            "commonProps": {
+                                "clickable": false
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "mainAlign": "center",
+                                "crossAlign": "center"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "${constant.ui.overlay.metric.statusClockWidth}",
+                                "height": "${constant.ui.overlay.metric.statusPillHeight}"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "label",
+                                    "labelProps": {
+                                        "text": "--:--"
+                                    },
+                                    "bindings": {
+                                        "labelProps.text": "clock_text"
+                                    },
+                                    "style": {
+                                        "fontSize": "${constant.ui.overlay.metric.statusClockFont}"
+                                    },
+                                    "placement": {
+                                        "mode": "flow"
+                                    },
+                                    "styleRefs": [
+                                        "shell.statusTinyMuted"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "container",
+                    "id": "status_right",
+                    "commonProps": {
+                        "clickable": false,
+                        "scrollable": false
+                    },
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "row",
+                        "mainAlign": "end",
+                        "crossAlign": "center",
+                        "gap": "${constant.ui.overlay.metric.statusItemGap}"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "${constant.ui.overlay.metric.statusPillWidth}",
+                        "height": "${constant.ui.overlay.metric.statusPillHeight}"
+                    },
+                    "children": [
+                        {
+                            "type": "container",
                             "id": "battery_pill",
                             "commonProps": {
                                 "hidden": true
@@ -139,108 +267,6 @@
                             ],
                             "styleRefs": [
                                 "shell.statusPill"
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "type": "container",
-                    "id": "status_right",
-                    "layout": {
-                        "type": "flex",
-                        "flexFlow": "row",
-                        "mainAlign": "end",
-                        "crossAlign": "center",
-                        "gap": "${constant.ui.overlay.metric.statusItemGap}"
-                    },
-                    "placement": {
-                        "mode": "flow",
-                        "width": "wrap",
-                        "height": "${constant.ui.overlay.metric.statusPillHeight}"
-                    },
-                    "children": [
-                        {
-                            "type": "container",
-                            "id": "wifi_pill",
-                            "commonProps": {
-                                "hidden": true
-                            },
-                            "bindings": {
-                                "commonProps.hidden": "wifi_hidden",
-                                "style.bgColor": "wifi_bg"
-                            },
-                            "layout": {
-                                "type": "flex",
-                                "mainAlign": "center",
-                                "crossAlign": "center"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "${constant.ui.overlay.metric.statusPillWidth}",
-                                "height": "${constant.ui.overlay.metric.statusPillHeight}"
-                            },
-                            "children": [
-                                {
-                                    "type": "label",
-                                    "id": "label",
-                                    "bindings": {
-                                        "labelProps.text": "labelProps.text",
-                                        "style.textColor": "wifi_text"
-                                    },
-                                "labelProps": {
-                                    "text": "${constant.i18n.overlay.wifi}"
-                                },
-                                "style": {
-                                    "fontSize": "${constant.ui.overlay.metric.statusPillFont}"
-                                },
-                                "placement": {
-                                    "mode": "flow"
-                                },
-                                "styleRefs": [
-                                    "shell.pillText"
-                                    ]
-                                }
-                            ],
-                            "styleRefs": [
-                                "shell.statusPill"
-                            ]
-                        },
-                        {
-                            "type": "container",
-                            "id": "clock",
-                            "commonProps": {
-                                "clickable": false
-                            },
-                            "layout": {
-                                "type": "flex",
-                                "mainAlign": "center",
-                                "crossAlign": "center"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "${constant.ui.overlay.metric.statusClockWidth}",
-                                "height": "${constant.ui.overlay.metric.statusPillHeight}"
-                            },
-                            "children": [
-                                {
-                                    "type": "label",
-                                    "id": "label",
-                                    "labelProps": {
-                                        "text": "--:--"
-                                    },
-                                    "bindings": {
-                                        "labelProps.text": "clock_text"
-                                    },
-                                    "style": {
-                                        "fontSize": "${constant.ui.overlay.metric.statusClockFont}"
-                                    },
-                                    "placement": {
-                                        "mode": "flow"
-                                    },
-                                    "styleRefs": [
-                                        "shell.statusTinyMuted"
-                                    ]
-                                }
                             ]
                         }
                     ]

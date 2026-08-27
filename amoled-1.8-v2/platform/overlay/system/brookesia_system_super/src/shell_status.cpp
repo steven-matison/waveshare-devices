@@ -31,18 +31,23 @@ namespace {
 
 using SNTPHelper = service::helper::SNTP;
 using WifiHelper = service::helper::Wifi;
+// Our overlay's status bar is a three-zone spaceBetween row (Steven, 2026-08-27):
+// WiFi at the LEFT edge (status_left), clock dead-CENTRE (status_center), battery
+// at the RIGHT edge (status_right). The upstream SUPER_STATUS_WIFI_PATH /
+// SUPER_STATUS_CLOCK_PATH constants still address the old single status_right
+// group, so we build our own from the exported SUPER_STATUS_BAR_PATH ("/status")
+// base -- the same reason the battery path below is local to this TU. These two
+// live outside the battery guard because every board (battery or not) has WiFi + clock.
+const std::string SUPER_STATUS_WIFI_PATH_LOCAL =
+    std::string(SUPER_STATUS_BAR_PATH) + "/status_left/wifi_pill";
+const std::string SUPER_STATUS_CLOCK_PATH_LOCAL =
+    std::string(SUPER_STATUS_BAR_PATH) + "/status_center/clock/label";
 #if defined(BOARD_HAS_BATTERY) && BOARD_HAS_BATTERY
 using DeviceHelper = service::helper::Device;
 
-// Local to this TU so the shared system_constants.hpp stays untouched. Built
-// from the exported SUPER_STATUS_BAR_PATH constant (the "/status" base) rather
-// than the BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS macro, which that header
-// only uses internally and does not leave in scope. The pill sits in its own
-// status_left group at the LEFT edge of the bar (Steven, 2026-08-27), opposite
-// the WiFi pill + clock in status_right -- overlay.json's "status" container is
-// a spaceBetween row, so the two groups pin to the two edges.
+// Battery pill sits in the status_right group at the RIGHT edge of the bar.
 const std::string SUPER_STATUS_BATTERY_PATH =
-    std::string(SUPER_STATUS_BAR_PATH) + "/status_left/battery_pill";
+    std::string(SUPER_STATUS_BAR_PATH) + "/status_right/battery_pill";
 #endif
 
 struct WifiStatusState {
@@ -202,17 +207,17 @@ void ShellApp::set_status_wifi_state(bool visible, bool connected)
     }
     std::vector<gui::BindingValueUpdate> updates;
     updates.push_back(gui::BindingValueUpdate{
-        .absolute_path = SUPER_STATUS_WIFI_PATH,
+        .absolute_path = SUPER_STATUS_WIFI_PATH_LOCAL,
         .key = "wifi_hidden",
         .value = bool_to_binding(!visible),
     });
     updates.push_back(gui::BindingValueUpdate{
-        .absolute_path = SUPER_STATUS_WIFI_PATH,
+        .absolute_path = SUPER_STATUS_WIFI_PATH_LOCAL,
         .key = "wifi_bg",
         .value = connected ? "${color.success.fill}" : "${color.border.strong}",
     });
     updates.push_back(gui::BindingValueUpdate{
-        .absolute_path = std::string(SUPER_STATUS_WIFI_PATH) + "/label",
+        .absolute_path = SUPER_STATUS_WIFI_PATH_LOCAL + "/label",
         .key = "wifi_text",
         .value = connected ? "${color.success.on}" : "${color.text.inverse}",
     });
@@ -400,7 +405,7 @@ void ShellApp::refresh_status_clock()
     if (context_ == nullptr) {
         return;
     }
-    auto result = context_->gui().set_binding_value(SUPER_STATUS_CLOCK_PATH, "clock_text", make_clock_text());
+    auto result = context_->gui().set_binding_value(SUPER_STATUS_CLOCK_PATH_LOCAL, "clock_text", make_clock_text());
     if (!result) {
         BROOKESIA_LOGW("Failed to refresh Shell status clock: %1%", result.error());
     }
