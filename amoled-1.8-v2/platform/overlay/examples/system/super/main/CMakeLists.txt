@@ -5,7 +5,7 @@ idf_component_register(
     SRCS ${SRCS}
     INCLUDE_DIRS "."
     EMBED_TXTFILES ${EMBEDDED_FILES}
-    PRIV_REQUIRES microfi_agent agent_status_tile
+    PRIV_REQUIRES microfi_agent agent_status_tile esp_board_manager
 )
 
 # --- Tuna Street runtime apps (#216) -----------------------------------------

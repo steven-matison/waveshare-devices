@@ -27,6 +27,10 @@
 #define MAIN_HAS_AGENT 0
 #endif
 
+#if BOARD_HAS_BATTERY
+#include "battlog.h"
+#endif
+
 using namespace esp_brookesia;
 
 extern "C" void app_main(void)
@@ -128,6 +132,14 @@ extern "C" void app_main(void)
 #else
         BROOKESIA_LOGI("MicroFi EFM agent: disabled by board profile '%1%' (hasAgent=false)",
                        BOARD_PROFILE_NAME);
+#endif
+
+#if BOARD_HAS_BATTERY
+        /* Battery-runtime logger (battery boards only, gated by the profile's
+         * hasBattery -> BOARD_HAS_BATTERY): reads AXP2101 VBAT and appends a CSV
+         * row to /sdcard/battlog.csv every 15 s, dumping the log to serial on
+         * boot. Empirical runtime measurement -- this board has no fuel gauge. */
+        battlog_start();
 #endif
 
         boost::this_thread::sleep_for(boost::chrono::seconds(10));

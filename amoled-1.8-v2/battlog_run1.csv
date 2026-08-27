@@ -1,0 +1,16 @@
+# Tuna Starlink AMOLED board #1 -- battery drain run 1 (2026-08-27), agent ON
+# Discharge from ~21% to death. seq,uptime_ms,vbat_mv,vbus_mv,vsys_mv,percent,source,charge_state,present
+# (vbus=16375 while on battery is ADC saturation, ignore. Death boot reset_reason=1=POWERON=full power loss.)
+1,48836,3645,-,3645,21,BAT
+20,334244,3577,-,3577,20,BAT
+40,634659,3551,-,3550,17,BAT
+60,935086,3514,-,3514,15,BAT
+80,1235572,3467,-,3473,13,BAT
+100,1536017,3426,-,3425,10,BAT
+120,1836472,3364,-,3365,6,BAT
+130,1986692,3289,-,3297,4,BAT
+135,2061804,3219,-,3221,2,BAT
+138,2106867,3144,-,3143,1,BAT
+139,2121891,3110,-,3110,1,BAT
+140,2136916,3071,-,3073,1,BAT
+# died shortly after seq140; replug boot = reset_reason=1 (POWERON)
