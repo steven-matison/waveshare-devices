@@ -29,6 +29,7 @@
 
 #if BOARD_HAS_BATTERY
 #include "battlog.h"
+#include "powerbtn.h"
 #endif
 
 using namespace esp_brookesia;
@@ -140,6 +141,11 @@ extern "C" void app_main(void)
          * row to /sdcard/battlog.csv every 15 s, dumping the log to serial on
          * boot. Empirical runtime measurement -- this board has no fuel gauge. */
         battlog_start();
+
+        /* Power-button power-off (#265): battery boards had no working way to
+         * turn off. Poll the AXP2101 PWRON long-press latch and issue the soft
+         * power-off on it, so holding the power button turns the board off. */
+        powerbtn_start();
 #endif
 
         boost::this_thread::sleep_for(boost::chrono::seconds(10));
